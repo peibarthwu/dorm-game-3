@@ -113,27 +113,27 @@ fn main() -> Result<()> {
         Vec3::new(0., 1., 0.),
     );
 
-    let marble_tex = engine.load_texture(std::path::Path::new("content/sphere-diffuse.jpg"))?;
-    let marble_meshes = engine.load_textured(std::path::Path::new("content/sphere.obj"))?;
-    let marble = engine.create_textured_model(marble_meshes, vec![marble_tex]);
-    let floor_tex = engine.load_texture(std::path::Path::new("content/cube-diffuse.jpg"))?;
-    let floor_meshes = engine.load_textured(std::path::Path::new("content/floor.obj"))?;
-    let floor = engine.create_textured_model(floor_meshes, vec![floor_tex]);
-    let king = engine.load_texture(std::path::Path::new("content/king.png"))?;
+    // let marble_tex = engine.load_texture(std::path::Path::new("content/sphere-diffuse.jpg"))?;
+    // let marble_meshes = engine.load_textured(std::path::Path::new("content/sphere.obj"))?;
+    // let marble = engine.create_textured_model(marble_meshes, vec![marble_tex]);
+    // let floor_tex = engine.load_texture(std::path::Path::new("content/cube-diffuse.jpg"))?;
+    // let floor_meshes = engine.load_textured(std::path::Path::new("content/floor.obj"))?;
+    // let floor = engine.create_textured_model(floor_meshes, vec![floor_tex]);
+    // let king = engine.load_texture(std::path::Path::new("content/king.png"))?;
     let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
     let meshes = engine.load_skinned(
         std::path::Path::new("content/characterSmall.fbx"),
         &["RootNode", "Root"],
     )?;
     let animation = engine.load_anim(
-        std::path::Path::new("content/anim/run.fbx"),
+        std::path::Path::new("content/run.fbx"),
         meshes[0],
         AnimationSettings { looping: true },
         "Root|Run",
     )?;
     assert_eq!(meshes.len(), 1);
     let model = engine.create_skinned_model(meshes, vec![tex]);
-    let flat_model = engine.load_flat(std::path::Path::new("content/windmill.glb"))?;
+    // let flat_model = engine.load_flat(std::path::Path::new("content/windmill.glb"))?;
     let world = World {
         camera,
         things: vec![GameObject {
@@ -142,26 +142,9 @@ fn main() -> Result<()> {
             animation,
             state: AnimationState { t: 0.0 },
         }],
-        sprites: vec![Sprite {
-            trf: Isometry3::new(Vec3::new(20.0, 5.0, -10.0), Rotor3::identity()),
-            size: Vec2::new(16.0, 16.0),
-            cel: Rect::new(0.5, 0.5, 0.5, 0.5),
-            tex: king,
-        }],
-        flats: vec![Flat {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, -10.0), Rotor3::identity(), 1.0),
-            model: flat_model,
-        }],
-        textured: vec![
-            Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 0.0, -10.0), Rotor3::identity(), 5.0),
-                model: marble,
-            },
-            Textured {
-                trf: Similarity3::new(Vec3::new(0.0, -25.0, 0.0), Rotor3::identity(), 10.0),
-                model: floor,
-            },
-        ],
+        sprites: vec![],
+        flats: vec![],
+        textured: vec![],
     };
     engine.play(world)
 }
