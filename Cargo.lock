@@ -672,15 +672,13 @@ dependencies = [
 
 [[package]]
 name = "frenderer"
-version = "0.2.0"
-source = "git+https://github.com/JoeOsborn/frenderer#4857a155b87ec5870ef613901c1d93646ddde205"
+version = "0.3.0"
+source = "git+https://github.com/JoeOsborn/frenderer#6a6f3a2ef914021d08a4ab080c8b3689f7e44204"
 dependencies = [
  "bytemuck",
  "color-eyre",
  "image",
- "rand",
- "russimp",
- "string-interner",
+ "russimp 1.0.3",
  "thunderdome",
  "ultraviolet",
  "vulkano",
@@ -1499,6 +1497,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "russimp"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c57d9d10993d2518c694c08d7bb9d402c544a053bf253e482da88dc04b06fe2a"
+dependencies = [
+ "derivative",
+ "num-derive",
+ "num-traits",
+ "num_enum",
+ "russimp-sys",
+]
+
+[[package]]
 name = "russimp-sys"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1562,7 +1573,7 @@ dependencies = [
  "frenderer",
  "image",
  "rand",
- "russimp",
+ "russimp 1.0.2",
  "string-interner",
  "thunderdome",
  "ultraviolet",
