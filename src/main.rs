@@ -121,39 +121,46 @@ fn main() -> Result<()> {
         Vec3::new(0., 1., 0.),
     );
 
-    let dorm_tex = engine.load_texture(std::path::Path::new("content/tex.png"))?;
-    let dorm_mesh = engine.load_textured(std::path::Path::new("content/dorm.fbx"))?;
-    let dorm_model = engine.create_textured_model(dorm_mesh, vec![dorm_tex]);
+    // let dorm_tex = engine.load_texture(std::path::Path::new("content/tex.png"))?;
+    // let dorm_mesh = engine.load_textured(std::path::Path::new("content/dorm.fbx"))?;
+    // print!("{}", dorm_mesh.len());
+
+    // let dorm_model = engine.create_textured_model(dorm_mesh, vec![dorm_tex]);
 
     let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
+    // let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
+    // let char_model = engine.create_textured_model(model, vec![tex]);
+
     let meshes = engine.load_skinned(
         std::path::Path::new("content/characterSmall.fbx"),
         &["RootNode", "Root"],
     )?;
     let animation = engine.load_anim(
-        std::path::Path::new("content/run.fbx"),
+        std::path::Path::new("content/kick.fbx"),
         meshes[0],
         AnimationSettings { looping: true },
-        "Root|Run",
+        "Root|Kick",
     )?;
     assert_eq!(meshes.len(), 1);
     let model = engine.create_skinned_model(meshes, vec![tex]);
-    // let flat_model = engine.load_flat(std::path::Path::new("content/windmill.glb"))?;
+    
     let world = World {
         camera,
-        things: vec![GameObject {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
-            model,
-            animation,
-            state: AnimationState { t: 0.0 },
-        }],
+        things: vec![
+            GameObject {
+                trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
+                model,
+                animation,
+                state: AnimationState { t: 0.0 },
+            }
+        ],
         sprites: vec![],
         flats: vec![],
         textured: vec![
-            Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
-                model: dorm_model,
-            },
+            // Textured {
+            //     trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
+            //     model: char_model,
+            // },
         ],
     };
     engine.play(world)
