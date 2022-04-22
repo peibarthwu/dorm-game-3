@@ -12,6 +12,21 @@ use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
 use std::rc::Rc;
 
 const DT: f64 = 1.0 / 60.0;
+pub struct GameState {
+    pub current_room: usize, //index of room in rooms
+    pub max_rooms: usize,
+    pub key_index: usize,
+    pub inventory: Vec<GameObject>,
+    pub rooms: Vec<Room>,
+    pub is_finished: bool,
+}
+
+//game states: main screen, instruction, playing, finalscreen
+//make one room first with lockedchest
+//if goes in through a door, generate a new room add it to rooms and
+//have a checker that makes sure rooms.len < max_room and rooms.len != key_index
+//have the character (collision?) get the key and put it in inventory
+//go through rooms until main room
 
 struct GameObject {
     trf: Similarity3,
@@ -140,7 +155,7 @@ fn main() -> Result<()> {
     // )?;
     assert_eq!(meshes.len(), 1);
     // let model = engine.create_skinned_model(meshes, vec![tex]);
-    
+
     let world = World {
         camera,
         things: vec![
@@ -153,14 +168,10 @@ fn main() -> Result<()> {
         ],
         sprites: vec![],
         flats: vec![],
-        textured: vec![
-            Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
-                model: char_model,
-            },
-        ],
+        textured: vec![Textured {
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
+            model: char_model,
+        }],
     };
     engine.play(world)
 }
-
-

@@ -1,4 +1,4 @@
- #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Vec2i {
     pub x: i32,
     pub y: i32,
@@ -12,6 +12,48 @@ impl std::ops::Add<Vec2i> for Vec2i {
             x: self.x + other.x,
             y: self.y + other.y,
         }
+    }
+}
+
+pub enum GameObject {
+    Key,
+    Chair,
+    LockedChest,
+}
+
+pub enum Direction {
+    North,
+    East,
+    South,
+    West,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Room {
+    pub doors: Vec<Door>,
+    pub floor: Texture,           //figure out the type for a texture
+    pub objects: Vec<GameObject>, //vec of game objects, perhaps including a key
+}
+
+impl Room {
+    pub fn new(doors: Vec<Door>, floor: Texture, objects: Vec<GameObject>) {
+        Room {
+            doors,
+            floor,
+            objects,
+        };
+    }
+}
+
+#[derive(Clone)]
+pub struct Door {
+    pub direction: Direction,
+    pub target: usize, //where it goes, Room
+                       //pub spawn_pos: Direction, //which door you come from
+}
+impl Door {
+    pub fn new(direction: Direction, target: usize) {
+        Door { direction, target };
     }
 }
 
@@ -39,11 +81,13 @@ impl Rect {
             other.pos.y <= self.pos.y+self.sz.y as i32
     }
 
-    pub fn rect_displacement(&self, r2:Rect) -> Option<(i32,i32)> {
+    pub fn rect_displacement(&self, r2: Rect) -> Option<(i32, i32)> {
         // Draw this out on paper to double check, but these quantities
         // will both be positive exactly when the conditions in rect_touching are true.
-        let x_overlap = (self.pos.x+self.sz.x as i32).min(r2.pos.x+r2.sz.x as i32) - self.pos.x.max(r2.pos.y);
-        let y_overlap = (self.pos.y+self.sz.y as i32).min(r2.pos.y+r2.sz.y as i32) - self.pos.y.max(r2.pos.y);
+        let x_overlap = (self.pos.x + self.sz.x as i32).min(r2.pos.x + r2.sz.x as i32)
+            - self.pos.x.max(r2.pos.y);
+        let y_overlap = (self.pos.y + self.sz.y as i32).min(r2.pos.y + r2.sz.y as i32)
+            - self.pos.y.max(r2.pos.y);
         if x_overlap >= 0 && y_overlap >= 0 {
             // This will return the magnitude of overlap in each axis.
             Some((x_overlap, y_overlap))
