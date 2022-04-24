@@ -10,6 +10,7 @@ use frenderer::renderer::textured::SingleRenderState as FTextured;
 use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
 use std::rc::Rc;
+use scene3d::types::*;
 
 const DT: f64 = 1.0 / 60.0;
 pub struct GameState {
@@ -51,6 +52,7 @@ struct World {
     sprites: Vec<Sprite>,
     flats: Vec<Flat>,
     textured: Vec<Textured>,
+    state: GameState,
 }
 struct Flat {
     trf: Similarity3,
@@ -138,7 +140,7 @@ fn main() -> Result<()> {
 
     let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
     let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
-    let char_model = engine.create_textured_model(tex, vec![model]);
+    let char_model = engine.create_textured_model(model, vec![tex]);
 
     // let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
     // let char_model = engine.create_textured_model(model, vec![tex]);
@@ -153,8 +155,20 @@ fn main() -> Result<()> {
     //     AnimationSettings { looping: true },
     //     "Root|Kick",
     // )?;
-    assert_eq!(meshes.len(), 1);
     // let model = engine.create_skinned_model(meshes, vec![tex]);
+
+    let door_0 = Door::new(Direction::North, 0);
+    let starting_room = Room::new(vec![Door::new(Direction::North, 0)], engine.load_texture(std::path::Path::new("content/robot.png"))?, vec![]);
+
+    let game_state = GameState {
+        current_room: 0, //index of room in rooms
+        max_rooms: 3,
+        key_index: 2,
+        inventory: vec![],
+        rooms: vec![starting_room],
+        is_finished: false,
+    };
+    
 
     let world = World {
         camera,
@@ -172,6 +186,7 @@ fn main() -> Result<()> {
             trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
             model: char_model,
         }],
+        state: game_state,
     };
     engine.play(world)
 }
