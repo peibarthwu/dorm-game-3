@@ -16,7 +16,6 @@ impl std::ops::Add<Vec2i> for Vec2i {
         }
     }
 }
-
 #[derive(Clone)]
 pub enum GameObject {
     Key,
@@ -24,7 +23,7 @@ pub enum GameObject {
     LockedChest,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Direction {
     North,
     East,
@@ -32,10 +31,10 @@ pub enum Direction {
     West,
 }
 
-// #[derive(Clone)]
+#[derive(Clone)]
 pub struct Room {
     pub doors: Vec<Door>,
-    pub floor: TextureRef,           //figure out the type for a texture
+    pub floor: TextureRef,        //figure out the type for a texture
     pub objects: Vec<GameObject>, //vec of game objects, perhaps including a key
 }
 
@@ -46,11 +45,9 @@ impl Room {
             floor,
             objects,
         };
-
     }
 }
-
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Door {
     pub direction: Direction,
     pub target: usize, //where it goes, Room
@@ -61,4 +58,3 @@ impl Door {
         Door { direction, target };
     }
 }
-

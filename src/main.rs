@@ -9,15 +9,18 @@ use frenderer::renderer::sprites::SingleRenderState as FSprite;
 use frenderer::renderer::textured::SingleRenderState as FTextured;
 use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
+use scene3d::types::{self, *};
 use std::rc::Rc;
-use scene3d::types::*;
 
 const DT: f64 = 1.0 / 60.0;
+
+#[derive(Clone)]
+
 pub struct GameState {
     pub current_room: usize, //index of room in rooms
     pub max_rooms: usize,
     pub key_index: usize,
-    pub inventory: Vec<GameObject>,
+    //pub inventory: Vec<GameObject>,
     pub rooms: Vec<Room>,
     pub is_finished: bool,
 }
@@ -157,18 +160,24 @@ fn main() -> Result<()> {
     // )?;
     // let model = engine.create_skinned_model(meshes, vec![tex]);
 
-    let door_0 = Door::new(Direction::North, 0);
-    let starting_room = Room::new(vec![Door::new(Direction::North, 0)], engine.load_texture(std::path::Path::new("content/robot.png"))?, vec![]);
+    let door_0 = Door {
+        direction: Direction::North,
+        target: 0,
+    };
+    let starting_room = Room {
+        doors: vec![door_0],
+        floor: engine.load_texture(std::path::Path::new("content/robot.png"))?,
+        objects: vec![],
+    };
 
     let game_state = GameState {
         current_room: 0, //index of room in rooms
         max_rooms: 3,
         key_index: 2,
-        inventory: vec![],
+        //inventory: vec![],
         rooms: vec![starting_room],
         is_finished: false,
     };
-    
 
     let world = World {
         camera,
