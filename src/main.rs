@@ -15,6 +15,9 @@ use std::rc::Rc;
 const DT: f64 = 1.0 / 60.0;
 const SPEED: f32 = 0.25;
 const ROOMSIZE: f32 = 50.0;
+const COLLISION_RADIUS: f32 = 10.0;
+const SCALE: f32 = 10.0;
+
 
 #[derive(Clone)]
 
@@ -54,6 +57,16 @@ struct Sprite {
 impl Sprite{
     pub fn move_by(&mut self, vec: Vec3) {
         self.trf.append_translation(vec);
+    }
+    pub fn check_collisions(&mut self, room: Room){
+        for door in room.doors.iter() {
+            let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
+            if (self.trf.translation.x - door_worldspace.translation.x).abs() <= COLLISION_RADIUS
+            && (self.trf.translation.y - door_worldspace.translation.y).abs() <= COLLISION_RADIUS
+            {
+                println!("door hit");
+            }
+        }
     }
 }
 struct World {
@@ -108,6 +121,7 @@ impl frenderer::World for World {
             if input.is_key_down(Key::D){
                 s.move_by(Vec3::new(SPEED, 0.0, 0.0));
             }
+            s.check_collisions(self.state.rooms[self.state.current_room]);
 
 
         }
