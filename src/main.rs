@@ -13,7 +13,8 @@ use scene3d::types::{self, *};
 use std::rc::Rc;
 
 const DT: f64 = 1.0 / 60.0;
-const ROOMSIZE: f32 = 30.0;
+const SPEED: f32 = 0.25;
+const ROOMSIZE: f32 = 50.0;
 
 #[derive(Clone)]
 
@@ -50,6 +51,11 @@ struct Sprite {
     cel: Rect,
     size: Vec2,
 }
+impl Sprite{
+    pub fn move_by(&mut self, vec: Vec3) {
+        self.trf.append_translation(vec);
+    }
+}
 struct World {
     camera: Camera,
     things: Vec<GameObject>,
@@ -79,6 +85,7 @@ impl frenderer::World for World {
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
 
+
         for obj in self.things.iter_mut() {
             obj.trf.append_rotation(rot);
             obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
@@ -86,9 +93,23 @@ impl frenderer::World for World {
             obj.tick_animation();
         }
         for s in self.sprites.iter_mut() {
-            s.trf.append_rotation(rot);
-            s.size.x += dscale;
-            s.size.y += dscale;
+            // s.trf.append_rotation(rot);
+            // s.size.x += dscale;
+            // s.size.y += dscale;
+            if input.is_key_down(Key::W){
+                s.move_by(Vec3::new(0.0, 0.0, -SPEED));
+            }
+            if input.is_key_down(Key::S){
+                s.move_by(Vec3::new(0.0, 0.0, SPEED));
+            }
+            if input.is_key_down(Key::A){
+                s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
+            }
+            if input.is_key_down(Key::D){
+                s.move_by(Vec3::new(SPEED, 0.0, 0.0));
+            }
+
+
         }
         for m in self.flats.iter_mut() {
             m.trf.append_rotation(rot);
@@ -131,9 +152,9 @@ impl frenderer::World for World {
         //         FSkinned::new(obj.animation, obj.state, obj.trf),
         //     );
         // }
-        // for (s_i, s) in self.sprites.iter_mut().enumerate() {
-        //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-        // }
+        for (s_i, s) in self.sprites.iter_mut().enumerate() {
+            rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+        }
         // for (m_i, m) in self.flats.iter_mut().enumerate() {
         //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
         // }
@@ -225,7 +246,14 @@ fn main() -> Result<()> {
             //     state: AnimationState { t: 0.0 },
             // }
         ],
-        sprites: vec![],
+        sprites: vec![
+            Sprite {
+                trf: Isometry3::new(Vec3::new(20.0, 5.0, -10.0), Rotor3::identity()),
+                size: Vec2::new(16.0, 16.0),
+                cel: Rect::new(0.5, 0.0, 0.5, 0.5),
+                tex: tex,
+            }
+        ],
         flats: vec![],
         textured: vec![
         // Textured {
@@ -235,22 +263,22 @@ fn main() -> Result<()> {
         // }
         ],
         door1: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), 10.0),
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
             model: door_model.clone(),
             name: String::from("Door1")
         },
         door2: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), 10.0),
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
             model: door_model.clone(),
             name: String::from("Door2")
         },
         door3: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), 10.0),
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
             model: door_model.clone(),
             name: String::from("Door1")
         },
         door4: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), 10.0),
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
             model: door_model.clone(),
             name: String::from("Door2")
         },
@@ -262,9 +290,9 @@ fn main() -> Result<()> {
 fn get_trf(dir: Direction, room_size: f32, scale: f32)-> Similarity3{
     match dir {
         Direction::North => Similarity3::new(Vec3::new(0.0, 0.0, room_size/2.),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), scale),
-        Direction::East => Similarity3::new(Vec3::new(room_size/2., 0.0, 0.0),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), scale),
+        Direction::East => Similarity3::new(Vec3::new(room_size/2., 0.0, 0.0),Rotor3::from_euler_angles(PI / 2.0, -PI / 2.0, 0.0), scale),
         Direction::South => Similarity3::new(Vec3::new(0.0, 0.0, -room_size/2.),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), scale),
-        Direction::West => Similarity3::new(Vec3::new(-room_size/2., 0.0, 0.0),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), scale),
+        Direction::West => Similarity3::new(Vec3::new(-room_size/2., 0.0, 0.0),Rotor3::from_euler_angles(-PI / 2.0, -PI / 2.0, 0.0), scale),
         // Direction::Other(n) => n as usize,
     }
 }
