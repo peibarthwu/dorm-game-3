@@ -1,12 +1,11 @@
 #![allow(dead_code)]
-
 use frenderer::animation::{AnimationSettings, AnimationState};
-use frenderer::assets::AnimRef;
+use frenderer::assets::{AnimRef, MeshRef};
 use frenderer::camera::Camera;
 use frenderer::renderer::flat::SingleRenderState as FFlat;
 use frenderer::renderer::skinned::SingleRenderState as FSkinned;
 use frenderer::renderer::sprites::SingleRenderState as FSprite;
-use frenderer::renderer::textured::SingleRenderState as FTextured;
+use frenderer::renderer::textured::{Model, SingleRenderState as FTextured};
 use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
 use scene3d::types::{self, *};
@@ -18,6 +17,12 @@ const ROOMSIZE: f32 = 50.0;
 const COLLISION_RADIUS: f32 = 10.0;
 const SCALE: f32 = 10.0;
 
+//game states: main screen, instruction, playing, finalscreen
+//make one room first with lockedchest
+//if goes in through a door, generate a new room add it to rooms and
+//have a checker that makes sure rooms.len < max_room and rooms.len != key_index
+//have the character (collision?) get the key and put it in inventory
+//go through rooms until main room
 
 #[derive(Clone)]
 
@@ -30,38 +35,52 @@ pub struct GameState {
     pub is_finished: bool,
 }
 
-//game states: main screen, instruction, playing, finalscreen
-//make one room first with lockedchest
-//if goes in through a door, generate a new room add it to rooms and
-//have a checker that makes sure rooms.len < max_room and rooms.len != key_index
-//have the character (collision?) get the key and put it in inventory
-//go through rooms until main room
-
+#[derive(Clone)]
 struct GameObject {
     trf: Similarity3,
     model: Rc<frenderer::renderer::skinned::Model>,
     animation: AnimRef,
     state: AnimationState,
 }
+//tick animation forward
 impl GameObject {
+    fn new(
+        trf: Similarity3,
+        model: Rc<frenderer::renderer::skinned::Model>,
+        animation: AnimRef,
+        state: AnimationState,
+    ) -> GameObject {
+        GameObject {
+            trf,
+            model,
+            animation,
+            state,
+        }
+    }
     fn tick_animation(&mut self) {
         self.state.tick(DT);
     }
 }
+
 struct Sprite {
     trf: Isometry3,
     tex: frenderer::assets::TextureRef,
     cel: Rect,
     size: Vec2,
+    //figure out how to do this tex_model
+    // tex_model: Vec<MeshRef<frenderer::renderer::flat::Mesh>>,
+    // animation: AnimRef,
+    //model: Rc<Model>,
+    sprite_object: GameObject,
 }
-impl Sprite{
+impl Sprite {
     pub fn move_by(&mut self, vec: Vec3) {
         self.trf.append_translation(vec);
     }
-    pub fn check_collisions(&mut self, door: Door){
+    pub fn check_collisions(&mut self, door: Door) {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
         if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x
-        && (self.trf.translation.z - door_worldspace.translation.z).abs() <= self.size.y
+            && (self.trf.translation.z - door_worldspace.translation.z).abs() <= self.size.y
         {
             println!("door hit");
         }
@@ -73,10 +92,10 @@ struct World {
     sprites: Vec<Sprite>,
     flats: Vec<Flat>,
     textured: Vec<Textured>,
-    door1:Textured,
-    door2:Textured,
-    door3:Textured,
-    door4:Textured,
+    door1: Textured,
+    door2: Textured,
+    door3: Textured,
+    door4: Textured,
     state: GameState,
 }
 struct Flat {
@@ -86,7 +105,7 @@ struct Flat {
 struct Textured {
     trf: Similarity3,
     model: Rc<frenderer::renderer::textured::Model>,
-    name: String
+    name: String,
 }
 impl frenderer::World for World {
     fn update(&mut self, input: &frenderer::Input, _assets: &mut frenderer::assets::Assets) {
@@ -95,7 +114,6 @@ impl frenderer::World for World {
         let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
-
 
         for obj in self.things.iter_mut() {
             obj.trf.append_rotation(rot);
@@ -107,22 +125,21 @@ impl frenderer::World for World {
             // s.trf.append_rotation(rot);
             // s.size.x += dscale;
             // s.size.y += dscale;
-            if input.is_key_down(Key::W){
+            if input.is_key_down(Key::W) {
                 s.move_by(Vec3::new(0.0, 0.0, -SPEED));
             }
-            if input.is_key_down(Key::S){
+            if input.is_key_down(Key::S) {
                 s.move_by(Vec3::new(0.0, 0.0, SPEED));
             }
-            if input.is_key_down(Key::A){
+            if input.is_key_down(Key::A) {
                 s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
             }
-            if input.is_key_down(Key::D){
+            if input.is_key_down(Key::D) {
                 s.move_by(Vec3::new(SPEED, 0.0, 0.0));
             }
             for door in self.state.rooms[self.state.current_room].doors.iter() {
                 s.check_collisions(*door);
             }
-
         }
         for m in self.flats.iter_mut() {
             m.trf.append_rotation(rot);
@@ -143,21 +160,53 @@ impl frenderer::World for World {
         rs: &mut frenderer::renderer::RenderState,
     ) {
         rs.set_camera(self.camera);
-        //put doors in the correct positions
+        //render the doors in the correct positions
         let door_list = &self.state.rooms[self.state.current_room].doors;
-        if door_list.len() > 0{
-            rs.render_textured(0 as usize, self.door1.model.clone(), FTextured::new(get_trf(door_list[0].direction, ROOMSIZE, self.door1.trf.scale))); 
+        if door_list.len() > 0 {
+            rs.render_textured(
+                0 as usize,
+                self.door1.model.clone(),
+                FTextured::new(get_trf(
+                    door_list[0].direction,
+                    ROOMSIZE,
+                    self.door1.trf.scale,
+                )),
+            );
         }
-        if door_list.len() > 1{
-            rs.render_textured(1 as usize, self.door2.model.clone(), FTextured::new(get_trf(door_list[1].direction, ROOMSIZE, self.door2.trf.scale))); 
+        if door_list.len() > 1 {
+            rs.render_textured(
+                1 as usize,
+                self.door2.model.clone(),
+                FTextured::new(get_trf(
+                    door_list[1].direction,
+                    ROOMSIZE,
+                    self.door2.trf.scale,
+                )),
+            );
         }
-        if door_list.len() > 2{
-            rs.render_textured(2 as usize, self.door3.model.clone(), FTextured::new(get_trf(door_list[2].direction, ROOMSIZE, self.door3.trf.scale))); 
+        if door_list.len() > 2 {
+            rs.render_textured(
+                2 as usize,
+                self.door3.model.clone(),
+                FTextured::new(get_trf(
+                    door_list[2].direction,
+                    ROOMSIZE,
+                    self.door3.trf.scale,
+                )),
+            );
         }
-        if door_list.len() > 3{
-            rs.render_textured(3 as usize, self.door4.model.clone(), FTextured::new(get_trf(door_list[3].direction, ROOMSIZE, self.door4.trf.scale))); 
+        if door_list.len() > 3 {
+            rs.render_textured(
+                3 as usize,
+                self.door4.model.clone(),
+                FTextured::new(get_trf(
+                    door_list[3].direction,
+                    ROOMSIZE,
+                    self.door4.trf.scale,
+                )),
+            );
         }
-        
+
         // for (obj_i, obj) in self.things.iter_mut().enumerate() {
         //     rs.render_skinned(
         //         obj_i,
@@ -165,6 +214,8 @@ impl frenderer::World for World {
         //         FSkinned::new(obj.animation, obj.state, obj.trf),
         //     );
         // }
+
+        //render the sprites
         for (s_i, s) in self.sprites.iter_mut().enumerate() {
             rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
         }
@@ -196,10 +247,37 @@ fn main() -> Result<()> {
         Vec3::new(0., 1., 0.),
     );
 
+    let sprite_meshes = engine.load_skinned(
+        std::path::Path::new("content/characterSmall.fbx"),
+        &["RootNode", "Root"],
+    )?;
+
+    let sprite_animation = engine.load_anim(
+        std::path::Path::new("content/kick.fbx"),
+        sprite_meshes[0],
+        AnimationSettings { looping: true },
+        "Root|Kick",
+    )?;
+    let sprite_texture = engine.load_texture(std::path::Path::new("content/robot.png"))?;
+    let sprite_model = engine.create_skinned_model(sprite_meshes, vec![sprite_texture]);
+
+    let sprite_obj = GameObject::new(
+        Similarity3::new(
+            Vec3::new(0.0, -25.0, 25.0),
+            Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0),
+            1.0,
+        ),
+        sprite_model,
+        sprite_animation,
+        AnimationState { t: 0.0 },
+    );
+
+    //character model (old)
     let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
     let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
     let char_model = engine.create_textured_model(model, vec![tex]);
 
+    //door model (old)
     let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
     let door_model = engine.create_textured_model(door, vec![tex]);
 
@@ -217,6 +295,8 @@ fn main() -> Result<()> {
     //     "Root|Kick",
     // )?;
     // let model = engine.create_skinned_model(meshes, vec![tex]);
+
+    //LA LA LA LA LA
 
     let door_1 = Door {
         direction: Direction::North,
@@ -259,14 +339,14 @@ fn main() -> Result<()> {
             //     state: AnimationState { t: 0.0 },
             // }
         ],
-        sprites: vec![
-            Sprite {
-                trf: Isometry3::new(Vec3::new(20.0, 5.0, -10.0), Rotor3::identity()),
-                size: Vec2::new(16.0, 16.0),
-                cel: Rect::new(0.5, 0.0, 0.5, 0.5),
-                tex: tex,
-            }
-        ],
+        sprites: vec![Sprite {
+            trf: Isometry3::new(Vec3::new(20.0, 5.0, -10.0), Rotor3::identity()),
+            size: Vec2::new(16.0, 16.0),
+            cel: Rect::new(0.5, 0.0, 0.5, 0.5),
+            tex: tex,
+            //model: sprite_object,
+            sprite_object: sprite_obj,
+        }],
         flats: vec![],
         textured: vec![
         // Textured {
@@ -276,36 +356,68 @@ fn main() -> Result<()> {
         // }
         ],
         door1: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
+            trf: Similarity3::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                10.0,
+            ),
             model: door_model.clone(),
-            name: String::from("Door1")
+            name: String::from("Door1"),
         },
         door2: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
+            trf: Similarity3::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                10.0,
+            ),
             model: door_model.clone(),
-            name: String::from("Door2")
+            name: String::from("Door2"),
         },
         door3: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
+            trf: Similarity3::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                10.0,
+            ),
             model: door_model.clone(),
-            name: String::from("Door1")
+            name: String::from("Door1"),
         },
         door4: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0),Rotor3::from_euler_angles(0.0, 0.0, 0.0), 10.0),
+            trf: Similarity3::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                10.0,
+            ),
             model: door_model.clone(),
-            name: String::from("Door2")
+            name: String::from("Door2"),
         },
         state: game_state,
     };
     engine.play(world)
 }
 
-fn get_trf(dir: Direction, room_size: f32, scale: f32)-> Similarity3{
+fn get_trf(dir: Direction, room_size: f32, scale: f32) -> Similarity3 {
     match dir {
-        Direction::North => Similarity3::new(Vec3::new(0.0, 0.0, room_size/2.),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), scale),
-        Direction::East => Similarity3::new(Vec3::new(room_size/2., 0.0, 0.0),Rotor3::from_euler_angles(PI / 2.0, -PI / 2.0, 0.0), scale),
-        Direction::South => Similarity3::new(Vec3::new(0.0, 0.0, -room_size/2.),Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0), scale),
-        Direction::West => Similarity3::new(Vec3::new(-room_size/2., 0.0, 0.0),Rotor3::from_euler_angles(-PI / 2.0, -PI / 2.0, 0.0), scale),
+        Direction::North => Similarity3::new(
+            Vec3::new(0.0, 0.0, room_size / 2.),
+            Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0),
+            scale,
+        ),
+        Direction::East => Similarity3::new(
+            Vec3::new(room_size / 2., 0.0, 0.0),
+            Rotor3::from_euler_angles(PI / 2.0, -PI / 2.0, 0.0),
+            scale,
+        ),
+        Direction::South => Similarity3::new(
+            Vec3::new(0.0, 0.0, -room_size / 2.),
+            Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0),
+            scale,
+        ),
+        Direction::West => Similarity3::new(
+            Vec3::new(-room_size / 2., 0.0, 0.0),
+            Rotor3::from_euler_angles(-PI / 2.0, -PI / 2.0, 0.0),
+            scale,
+        ),
         // Direction::Other(n) => n as usize,
     }
 }
