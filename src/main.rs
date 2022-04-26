@@ -247,6 +247,15 @@ fn main() -> Result<()> {
         Vec3::new(0., 1., 0.),
     );
 
+    //character model (old)
+    let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
+    let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
+    let char_model = engine.create_textured_model(model, vec![tex]);
+
+    //door model (old)
+    let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
+    let door_model = engine.create_textured_model(door, vec![tex]);
+
     let sprite_meshes = engine.load_skinned(
         std::path::Path::new("content/characterSmall.fbx"),
         &["RootNode", "Root"],
@@ -272,14 +281,14 @@ fn main() -> Result<()> {
         AnimationState { t: 0.0 },
     );
 
-    //character model (old)
-    let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
-    let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
-    let char_model = engine.create_textured_model(model, vec![tex]);
-
-    //door model (old)
-    let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
-    let door_model = engine.create_textured_model(door, vec![tex]);
+    let game_sprite = Sprite {
+        trf: Isometry3::new(Vec3::new(20.0, 5.0, -10.0), Rotor3::identity()),
+        size: Vec2::new(16.0, 16.0),
+        cel: Rect::new(0.5, 0.0, 0.5, 0.5),
+        tex: tex,
+        //model: sprite_object,
+        sprite_object: sprite_obj,
+    };
 
     // let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
     // let char_model = engine.create_textured_model(model, vec![tex]);
@@ -339,14 +348,7 @@ fn main() -> Result<()> {
             //     state: AnimationState { t: 0.0 },
             // }
         ],
-        sprites: vec![Sprite {
-            trf: Isometry3::new(Vec3::new(20.0, 5.0, -10.0), Rotor3::identity()),
-            size: Vec2::new(16.0, 16.0),
-            cel: Rect::new(0.5, 0.0, 0.5, 0.5),
-            tex: tex,
-            //model: sprite_object,
-            sprite_object: sprite_obj,
-        }],
+        sprites: vec![game_sprite],
         flats: vec![],
         textured: vec![
         // Textured {
