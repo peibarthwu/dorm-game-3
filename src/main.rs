@@ -58,14 +58,12 @@ impl Sprite{
     pub fn move_by(&mut self, vec: Vec3) {
         self.trf.append_translation(vec);
     }
-    pub fn check_collisions(&mut self, room: Room){
-        for door in room.doors.iter() {
-            let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
-            if (self.trf.translation.x - door_worldspace.translation.x).abs() <= COLLISION_RADIUS
-            && (self.trf.translation.y - door_worldspace.translation.y).abs() <= COLLISION_RADIUS
-            {
-                println!("door hit");
-            }
+    pub fn check_collisions(&mut self, door: Door){
+        let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
+        if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x
+        && (self.trf.translation.z - door_worldspace.translation.z).abs() <= self.size.y
+        {
+            println!("door hit");
         }
     }
 }
@@ -121,8 +119,9 @@ impl frenderer::World for World {
             if input.is_key_down(Key::D){
                 s.move_by(Vec3::new(SPEED, 0.0, 0.0));
             }
-            s.check_collisions(self.state.rooms[self.state.current_room]);
-
+            for door in self.state.rooms[self.state.current_room].doors.iter() {
+                s.check_collisions(*door);
+            }
 
         }
         for m in self.flats.iter_mut() {
