@@ -14,7 +14,7 @@ use std::rc::Rc;
 
 const DT: f64 = 1.0 / 60.0;
 const SPEED: f32 = 0.25;
-const ROOMSIZE: f32 = 50.0;
+const ROOMSIZE: f32 = 60.0;
 const COLLISION_RADIUS: f32 = 10.0;
 const SCALE: f32 = 10.0;
 
@@ -60,8 +60,9 @@ impl Sprite{
     }
     pub fn check_collisions(&mut self, door: Door){
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
-        if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x
-        && (self.trf.translation.z - door_worldspace.translation.z).abs() <= self.size.y
+        // if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x/2.
+        // && (self.trf.translation.z - door_worldspace.translation.z).abs() <= self.size.y/2.
+        if self.cel.contains(door_worldspace.translation)
         {
             println!("door hit");
         }
