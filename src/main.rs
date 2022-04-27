@@ -71,7 +71,7 @@ struct Sprite {
     // tex_model: Vec<MeshRef<frenderer::renderer::flat::Mesh>>,
     // animation: AnimRef,
     //model: Rc<Model>,
-    sprite_object: GameObject,
+    //sprite_object: GameObject,
 }
 impl Sprite {
     pub fn move_by(&mut self, vec: Vec3) {
@@ -207,13 +207,24 @@ impl frenderer::World for World {
             );
         }
 
-        // for (obj_i, obj) in self.things.iter_mut().enumerate() {
-        //     rs.render_skinned(
-        //         obj_i,
-        //         obj.model.clone(),
-        //         FSkinned::new(obj.animation, obj.state, obj.trf),
-        //     );
-        // }
+        for (obj_i, obj) in self.things.iter_mut().enumerate() {
+            rs.render_skinned(
+                obj_i,
+                obj.model.clone(),
+                FSkinned::new(obj.animation, obj.state, obj.trf),
+            );
+        }
+
+        // grace's render skinned it is not good code
+        // rs.render_skinned(
+        //     3 as usize,
+        //     self.sprites[0].model,
+        //     FSkinned::new(
+        //         self.sprites[0].sprite_object.animation,
+        //         self.sprites[0].sprite_object.state,
+        //         self.sprites[0].sprite_object.trf,
+        //     ),
+        // );
 
         //render the sprites
         for (s_i, s) in self.sprites.iter_mut().enumerate() {
@@ -256,6 +267,30 @@ fn main() -> Result<()> {
     let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
     let door_model = engine.create_textured_model(door, vec![tex]);
 
+    //code for a textured model
+    // let sprite_meshes = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
+    // let sprite_texture = engine.load_texture(std::path::Path::new("content/robot.png"))?;
+    // let sprite_model = engine.create_textured_model(sprite_meshes, vec![sprite_texture]);
+
+    // let sprite_animation = engine.load_anim(
+    //     std::path::Path::new("content/kick.fbx"),
+    //     sprite_meshes[0],
+    //     AnimationSettings { looping: true },
+    //     "Root|Kick",
+    // )?;
+
+    // let sprite_obj = GameObject::new(
+    //     Similarity3::new(
+    //         Vec3::new(0.0, -25.0, 25.0),
+    //         Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0),
+    //         1.0,
+    //     ),
+    //     sprite_model,
+    //     sprite_animation,
+    //     AnimationState { t: 0.0 },
+    // );
+
+    //code for skinned model and gameObject
     let sprite_meshes = engine.load_skinned(
         std::path::Path::new("content/characterSmall.fbx"),
         &["RootNode", "Root"],
@@ -286,8 +321,8 @@ fn main() -> Result<()> {
         size: Vec2::new(16.0, 16.0),
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
-        //model: sprite_object,
-        sprite_object: sprite_obj,
+        //model: sprite_model,
+        //sprite_object: sprite_obj,
     };
 
     // let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
@@ -341,12 +376,12 @@ fn main() -> Result<()> {
     let world = World {
         camera,
         things: vec![
-            // GameObject {
-            //     trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
-            //     model,
-            //     animation,
-            //     state: AnimationState { t: 0.0 },
-            // }
+            sprite_obj, // GameObject {
+                       //     trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 1.0),
+                       //     model,
+                       //     animation,
+                       //     state: AnimationState { t: 0.0 },
+                       // }
         ],
         sprites: vec![game_sprite],
         flats: vec![],
