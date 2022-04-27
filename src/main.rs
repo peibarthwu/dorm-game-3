@@ -10,11 +10,13 @@ use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
 use scene3d::types::{self, *};
 use std::rc::Rc;
+use rand::Rng;
+
 
 const DT: f64 = 1.0 / 60.0;
 const SPEED: f32 = 0.25;
 const ROOMSIZE: f32 = 60.0;
-const COLLISION_RADIUS: f32 = 10.0;
+const COLLISION_RADIUS: f32 = 1.0;
 const SCALE: f32 = 10.0;
 
 //game states: main screen, instruction, playing, finalscreen
@@ -79,14 +81,9 @@ impl Sprite {
     }
     pub fn check_collisions(&mut self, door: Door) {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
-<<<<<<< HEAD
-        // if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x/2.
-        // && (self.trf.translation.z - door_worldspace.translation.z).abs() <= self.size.y/2.
-        if self.cel.contains(door_worldspace.translation)
-=======
-        if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x
-            && (self.trf.translation.z - door_worldspace.translation.z).abs() <= self.size.y
->>>>>>> f8fae140dfaa4a5c204ce944ebaabde2084d2291
+        if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x/2.
+        && (self.trf.translation.z - door_worldspace.translation.z).abs() <= COLLISION_RADIUS
+        // if self.cel.contains(door_worldspace.translation)
         {
             println!("door hit");
         }
@@ -464,3 +461,52 @@ fn get_trf(dir: Direction, room_size: f32, scale: f32) -> Similarity3 {
         // Direction::Other(n) => n as usize,
     }
 }
+
+fn generate_rooms(num_rooms: u32) -> Vec<Room> {
+    let mut vec = Vec::<Room>::new();
+    for n in 0..num_rooms{
+        let doors = generate_doors(rng.gen_range(1..4), num_rooms);
+        let room = Room::new()
+        vec.push();
+    }
+    return vec;
+
+}
+
+fn generate_doors(num_doors: u32, num_rooms: u32) -> Vec<Door>{
+    let mut vec = Vec::<Door>::new();
+    let mut dirs = Vec::<Direction>::new();
+
+    let mut rng = rand::thread_rng();
+    //generate directions
+    //no two doors can be in the same direction
+    let mut contains = false;
+    let length = dirs.len();
+    while length < num_doors as usize {
+        let next_direction = get_dir(rng.gen_range(0..3));
+        for direction in &*dirs {
+            if next_direction == *direction{
+                contains = true;
+            }
+        }
+        if !contains {
+            dirs.push(next_direction);
+        }
+    }
+    for n in 0..num_doors{
+        let door = Door::new(dirs[n as usize],rng.gen_range(0..num_rooms as usize));
+        vec.push(door);
+    }
+    return vec;
+}
+
+fn get_dir(num: u32) -> Direction {
+    match num {
+        0 => Direction::North,
+        1 => Direction::East,
+        2 => Direction::South,
+        3 => Direction::West,
+        Other => Direction::West,
+    }
+}
+

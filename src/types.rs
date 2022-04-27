@@ -39,8 +39,8 @@ pub struct Room {
 }
 
 impl Room {
-    pub fn new(doors: Vec<Door>, floor: TextureRef, objects: Vec<GameObject>) {
-        Room {
+    pub fn new(doors: Vec<Door>, floor: TextureRef, objects: Vec<GameObject>) -> Self {
+        return Room {
             doors,
             floor,
             objects,
@@ -54,7 +54,10 @@ pub struct Door {
                        //pub spawn_pos: Direction, //which door you come from
 }
 impl Door {
-    pub fn new(direction: Direction, target: usize) {
-        Door { direction, target };
+    pub fn new(direction: Direction, target: usize) -> Self {
+        return Door { direction, target };
     }
+    // pub fn new(direction: Direction, target: usize) -> Self {
+    //     Door::new(direction, target);
+    // }
 }
