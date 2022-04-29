@@ -79,14 +79,12 @@ impl Sprite {
     pub fn move_by(&mut self, vec: Vec3) {
         self.trf.append_translation(vec);
     }
-    pub fn check_collisions(&mut self, door: Door) {
+    pub fn check_collisions(&mut self, door: Door) -> bool{
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
-        if (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x/2.
-        && (self.trf.translation.z - door_worldspace.translation.z).abs() <= COLLISION_RADIUS
+        return (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x/2.
+        && (self.trf.translation.z - door_worldspace.translation.z).abs() <= COLLISION_RADIUS;
         // if self.cel.contains(door_worldspace.translation)
-        {
-            println!("door hit");
-        }
+    
     }
 }
 struct World {
@@ -141,7 +139,14 @@ impl frenderer::World for World {
                 s.move_by(Vec3::new(SPEED, 0.0, 0.0));
             }
             for door in self.state.rooms[self.state.current_room].doors.iter() {
-                s.check_collisions(*door);
+                if( s.check_collisions(*door)){
+                    self.state.current_room = door.target;
+                    s.trf.translation = get_trf(
+                        door.direction,
+                        ROOMSIZE,
+                        SCALE).translation;
+                    dbg!({""}, self.state.current_room);
+                }
             }
         }
         for m in self.flats.iter_mut() {
@@ -345,34 +350,36 @@ fn main() -> Result<()> {
 
     //LA LA LA LA LA
 
-    let door_1 = Door {
-        direction: Direction::North,
-        target: 0,
-    };
-    let door_2 = Door {
-        direction: Direction::East,
-        target: 0,
-    };
-    let door_3 = Door {
-        direction: Direction::South,
-        target: 0,
-    };
-    let door_4 = Door {
-        direction: Direction::West,
-        target: 0,
-    };
-    let starting_room = Room {
-        doors: vec![door_1, door_2, door_3, door_4],
-        floor: engine.load_texture(std::path::Path::new("content/robot.png"))?,
-        objects: vec![],
-    };
+    // let door_1 = Door {
+    //     direction: Direction::North,
+    //     target: 0,
+    // };
+    // let door_2 = Door {
+    //     direction: Direction::East,
+    //     target: 0,
+    // };
+    // let door_3 = Door {
+    //     direction: Direction::South,
+    //     target: 0,
+    // };
+    // let door_4 = Door {
+    //     direction: Direction::West,
+    //     target: 0,
+    // };
+    // let starting_room = Room {
+    //     doors: vec![door_1, door_2, door_3, door_4],
+    //     // floor: engine.load_texture(std::path::Path::new("content/robot.png"))?,
+    //     objects: vec![],
+    // };
+
+    let rooms = generate_rooms(5);
 
     let game_state = GameState {
         current_room: 0, //index of room in rooms
         max_rooms: 3,
         key_index: 2,
         //inventory: vec![],
-        rooms: vec![starting_room],
+        rooms: rooms,
         is_finished: false,
     };
 
@@ -399,7 +406,7 @@ fn main() -> Result<()> {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
                 Rotor3::from_euler_angles(0.0, 0.0, 0.0),
-                10.0,
+                SCALE,
             ),
             model: door_model.clone(),
             name: String::from("Door1"),
@@ -408,7 +415,7 @@ fn main() -> Result<()> {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
                 Rotor3::from_euler_angles(0.0, 0.0, 0.0),
-                10.0,
+                SCALE,
             ),
             model: door_model.clone(),
             name: String::from("Door2"),
@@ -417,7 +424,7 @@ fn main() -> Result<()> {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
                 Rotor3::from_euler_angles(0.0, 0.0, 0.0),
-                10.0,
+                SCALE,
             ),
             model: door_model.clone(),
             name: String::from("Door1"),
@@ -426,7 +433,7 @@ fn main() -> Result<()> {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
                 Rotor3::from_euler_angles(0.0, 0.0, 0.0),
-                10.0,
+                SCALE,
             ),
             model: door_model.clone(),
             name: String::from("Door2"),
@@ -464,24 +471,23 @@ fn get_trf(dir: Direction, room_size: f32, scale: f32) -> Similarity3 {
 
 fn generate_rooms(num_rooms: u32) -> Vec<Room> {
     let mut vec = Vec::<Room>::new();
+    let mut rng = rand::thread_rng();
     for n in 0..num_rooms{
         let doors = generate_doors(rng.gen_range(1..4), num_rooms);
-        let room = Room::new()
-        vec.push();
+        let room = Room::new(doors, vec![]);
+        vec.push(room);
     }
     return vec;
-
 }
 
 fn generate_doors(num_doors: u32, num_rooms: u32) -> Vec<Door>{
     let mut vec = Vec::<Door>::new();
     let mut dirs = Vec::<Direction>::new();
-
     let mut rng = rand::thread_rng();
     //generate directions
     //no two doors can be in the same direction
     let mut contains = false;
-    let length = dirs.len();
+    let mut length = dirs.len();
     while length < num_doors as usize {
         let next_direction = get_dir(rng.gen_range(0..3));
         for direction in &*dirs {
@@ -491,10 +497,18 @@ fn generate_doors(num_doors: u32, num_rooms: u32) -> Vec<Door>{
         }
         if !contains {
             dirs.push(next_direction);
+            length += 1;
+            dbg!(length);
         }
+        contains = false;
+
     }
     for n in 0..num_doors{
-        let door = Door::new(dirs[n as usize],rng.gen_range(0..num_rooms as usize));
+        let mut target = rng.gen_range(0..num_rooms as usize);
+        while target == n as usize {
+            target = rng.gen_range(0..num_rooms as usize);
+        }
+        let door = Door::new(dirs[n as usize], target, get_spawn_dir(dirs[n as usize]));
         vec.push(door);
     }
     return vec;
@@ -510,3 +524,13 @@ fn get_dir(num: u32) -> Direction {
     }
 }
 
+
+fn get_spawn_dir(dir: Direction) -> Direction {
+    match dir {
+        Direction::North => Direction::South,
+        Direction::South => Direction::North,
+        Direction::East => Direction::West,
+        Direction::West => Direction::East,
+        Other => Direction::West,
+    }
+}
