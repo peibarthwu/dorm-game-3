@@ -267,7 +267,7 @@ fn main() -> Result<()> {
         Vec3::new(0., 1., 0.),
     );
 
-    //character model (old)
+    //character model
     let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
     let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
     let char_model = engine.create_textured_model(model, vec![tex]);
@@ -275,11 +275,6 @@ fn main() -> Result<()> {
     //door model (old)
     let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
     let door_model = engine.create_textured_model(door, vec![tex]);
-
-    // //code for a textured model
-    let sprite_meshes = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
-    let sprite_texture = engine.load_texture(std::path::Path::new("content/robot.png"))?;
-    let sprite_textured_model = engine.create_textured_model(sprite_meshes, vec![sprite_texture]);
 
     //code for skinned model and gameObject
     let sprite_meshes = engine.load_skinned(
@@ -300,12 +295,12 @@ fn main() -> Result<()> {
     let sprite_obj = GameObject::new(
         Similarity3::new(
             Vec3::new(0.0, 0.0, 0.0),
-            Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0),
+            Rotor3::from_euler_angles(0.0, 0.0, 0.0),
             1.0,
         ),
         sprite_model,
         sprite_animation,
-        AnimationState { t: 1.0 },
+        AnimationState { t: 0.0 },
     );
 
     let game_sprite = Sprite {
@@ -313,8 +308,6 @@ fn main() -> Result<()> {
         size: Vec2::new(16.0, 16.0),
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
-        //model: sprite_model,
-        //sprite_object: sprite_obj,
     };
 
     let rooms = generate_rooms(5);
@@ -332,12 +325,11 @@ fn main() -> Result<()> {
     let world = World {
         camera,
         //game object isn't rendering :(
-        things: vec![sprite_obj], //vec![sprite_obj],
+        things: vec![sprite_obj],
         sprites: vec![game_sprite],
         flats: vec![],
         textured: vec![],
         //here is the code for the standard character model
-        //no animations yet
         //vec![Textured {
         //     trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 0.05),
         //     model: char_model.clone(),
