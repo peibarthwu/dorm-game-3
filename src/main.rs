@@ -152,62 +152,63 @@ impl frenderer::World for World {
         let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
+        let to_the_moon = Vec3::new(0.0, 100.0, 0.0);
 
+        //controls for gameplaystate mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
-            //goal is just to get an image on the screen that says "dorm game"
-            // let main_image = Image::new(10, 10);
-            // main_image.from_file(std::path::Path::new("content/robot.png"));
-        } else if self.state.gameplaystate == GameplayState::Play {
-            //to get this to work we need to modify frenderer engine's ".render bit"
-            //so that it doesn't render everything onto the screen
-
-        //trying to get it to move
-        for obj in self.things.iter_mut() {
-            obj.trf.append_rotation(rot);
-            obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
-            // dbg!(obj.trf.rotation);
-            obj.tick_animation();
-        }
-
-        for s in self.sprites.iter_mut() {
-            // s.trf.append_rotation(rot);
-            // s.size.x += dscale;
-            // s.size.y += dscale;
-            if input.is_key_down(Key::W) {
-                s.move_by(Vec3::new(0.0, 0.0, -SPEED));
-            }
             if input.is_key_down(Key::S) {
-                s.move_by(Vec3::new(0.0, 0.0, SPEED));
-            }
-            if input.is_key_down(Key::A) {
-                s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
-            }
-            if input.is_key_down(Key::D) {
-                s.move_by(Vec3::new(SPEED, 0.0, 0.0));
-            }
-            for door in self.state.rooms[self.state.current_room].doors.iter() {
-                if (s.check_collisions(*door)) {
-                    self.state.current_room = door.target;
-                    s.trf.translation = get_trf(door.direction, ROOMSIZE, SCALE).translation;
-                    dbg!({ "" }, self.state.current_room);
+                self.state.gameplaystate = GameplayState::Play;
+                for obj in self.textured.iter_mut() {
+                    obj.trf.append_translation(to_the_moon);
                 }
             }
         }
-        for m in self.flats.iter_mut() {
-            m.trf.append_rotation(rot);
-            m.trf.scale += dscale;
-        }
-        for m in self.textured.iter_mut() {
-            m.trf.append_rotation(rot);
-            m.trf.scale += dscale;
-        }
-        let camera_drot = input.key_axis(Key::Left, Key::Right) * PI / 4.0 * DT as f32;
-        self.camera
-            .transform
-            .prepend_rotation(Rotor3::from_rotation_xz(camera_drot));
-        
-        }
+        //controls for gameplaystate play
+        else if self.state.gameplaystate == GameplayState::Play {
+            for obj in self.things.iter_mut() {
+                obj.trf.append_rotation(rot);
+                obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
+                // dbg!(obj.trf.rotation);
+                obj.tick_animation();
+            }
 
+            for s in self.sprites.iter_mut() {
+                // s.trf.append_rotation(rot);
+                // s.size.x += dscale;
+                // s.size.y += dscale;
+                if input.is_key_down(Key::W) {
+                    s.move_by(Vec3::new(0.0, 0.0, -SPEED));
+                }
+                if input.is_key_down(Key::S) {
+                    s.move_by(Vec3::new(0.0, 0.0, SPEED));
+                }
+                if input.is_key_down(Key::A) {
+                    s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                }
+                if input.is_key_down(Key::D) {
+                    s.move_by(Vec3::new(SPEED, 0.0, 0.0));
+                }
+                for door in self.state.rooms[self.state.current_room].doors.iter() {
+                    if (s.check_collisions(*door)) {
+                        self.state.current_room = door.target;
+                        s.trf.translation = get_trf(door.direction, ROOMSIZE, SCALE).translation;
+                        dbg!({ "" }, self.state.current_room);
+                    }
+                }
+            }
+            for m in self.flats.iter_mut() {
+                m.trf.append_rotation(rot);
+                m.trf.scale += dscale;
+            }
+            for m in self.textured.iter_mut() {
+                m.trf.append_rotation(rot);
+                m.trf.scale += dscale;
+            }
+            let camera_drot = input.key_axis(Key::Left, Key::Right) * PI / 4.0 * DT as f32;
+            self.camera
+                .transform
+                .prepend_rotation(Rotor3::from_rotation_xz(camera_drot));
+        }
     }
     fn render(
         &mut self,
@@ -215,54 +216,90 @@ impl frenderer::World for World {
         rs: &mut frenderer::renderer::RenderState,
     ) {
         rs.set_camera(self.camera);
-        //render the doors in the correct positions
-        let door_list = &self.state.rooms[self.state.current_room].doors;
-        let mut tex_render_key = 0 as usize;
-        if door_list.len() > 0 {
-            rs.render_textured(
-                0 as usize,
-                self.door1.model.clone(),
-                FTextured::new(get_trf(
-                    door_list[0].direction,
-                    ROOMSIZE,
-                    self.door1.trf.scale,
-                )),
-            );
-        }
-        if door_list.len() > 1 {
-            rs.render_textured(
-                1 as usize,
-                self.door2.model.clone(),
-                FTextured::new(get_trf(
-                    door_list[1].direction,
-                    ROOMSIZE,
-                    self.door2.trf.scale,
-                )),
-            );
-        }
-        if door_list.len() > 2 {
-            rs.render_textured(
-                2 as usize,
-                self.door3.model.clone(),
-                FTextured::new(get_trf(
-                    door_list[2].direction,
-                    ROOMSIZE,
-                    self.door3.trf.scale,
-                )),
-            );
-        }
-        if door_list.len() > 3 {
-            rs.render_textured(
-                3 as usize,
-                self.door4.model.clone(),
-                FTextured::new(get_trf(
-                    door_list[3].direction,
-                    ROOMSIZE,
-                    self.door4.trf.scale,
-                )),
-            );
-        }
 
+        //gameplaystate:: Mainscreen
+        if self.state.gameplaystate == GameplayState::Mainscreen {
+            for (t_i, t) in self.textured.iter_mut().enumerate() {
+                rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
+            }
+        }
+        //gameplaystate:: play
+        else if self.state.gameplaystate == GameplayState::Play {
+            //render the doors in the correct positions
+            let door_list = &self.state.rooms[self.state.current_room].doors;
+            let mut tex_render_key = 0 as usize;
+            if door_list.len() > 0 {
+                rs.render_textured(
+                    0 as usize,
+                    self.door1.model.clone(),
+                    FTextured::new(get_trf(
+                        door_list[0].direction,
+                        ROOMSIZE,
+                        self.door1.trf.scale,
+                    )),
+                );
+            }
+            if door_list.len() > 1 {
+                rs.render_textured(
+                    1 as usize,
+                    self.door2.model.clone(),
+                    FTextured::new(get_trf(
+                        door_list[1].direction,
+                        ROOMSIZE,
+                        self.door2.trf.scale,
+                    )),
+                );
+            }
+            if door_list.len() > 2 {
+                rs.render_textured(
+                    2 as usize,
+                    self.door3.model.clone(),
+                    FTextured::new(get_trf(
+                        door_list[2].direction,
+                        ROOMSIZE,
+                        self.door3.trf.scale,
+                    )),
+                );
+            }
+            if door_list.len() > 3 {
+                rs.render_textured(
+                    3 as usize,
+                    self.door4.model.clone(),
+                    FTextured::new(get_trf(
+                        door_list[3].direction,
+                        ROOMSIZE,
+                        self.door4.trf.scale,
+                    )),
+                );
+            }
+
+            for (obj_i, obj) in self.things.iter_mut().enumerate() {
+                rs.render_skinned(
+                    5 as usize,
+                    obj.model.clone(),
+                    FSkinned::new(obj.animation, obj.state, obj.trf),
+                );
+            }
+
+            //render room
+            rs.render_textured(
+                6 as usize,
+                self.room.model.clone(),
+                FTextured::new(Similarity3::new(
+                    Vec3::new(0.0, ROOMSIZE / 2., 0.0),
+                    Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                    ROOMSIZE / 2.,
+                )),
+            );
+
+<<<<<<< HEAD
+            // //render the sprites
+            for (s_i, s) in self.sprites.iter_mut().enumerate() {
+                rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+                // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
+            }
+        }
+=======
         for (obj_i, obj) in self.things.iter_mut().enumerate() {
             rs.render_skinned(
                 5 as usize,
@@ -283,14 +320,24 @@ impl frenderer::World for World {
         );
 
         // //render the sprites
+<<<<<<< HEAD
         for (s_i, s) in self.sprites.iter_mut().enumerate() {
             rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
             // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
         }
+=======
+        // for (s_i, s) in self.sprites.iter_mut().enumerate() {
+        //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+        //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
+        // }
+>>>>>>> 32e7da614f642d5f382cddbbab6c75d905a2ec0d
+>>>>>>> 26dbbe5522d4623b3391d078a4afe6df972f55f3
 
         // for (m_i, m) in self.flats.iter_mut().enumerate() {
         //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
         // }
+<<<<<<< HEAD
+=======
 
         //tricky: if rendering somehting the "key" needs to be unique for each one if it's the same rs function
         rs.render_textured(7, self.sprites[0].tex_model.model.clone(), FTextured::new( self.sprites[0].tex_model.trf));
@@ -298,6 +345,7 @@ impl frenderer::World for World {
         // for (t_i, t) in self.textured.iter_mut().enumerate() {
         //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
         // }
+>>>>>>> 32e7da614f642d5f382cddbbab6c75d905a2ec0d
     }
 }
 fn main() -> Result<()> {
@@ -333,6 +381,10 @@ fn main() -> Result<()> {
     let room = engine.load_textured(std::path::Path::new("content/room2.fbx"))?;
     let room_model = engine.create_textured_model(room, vec![tex]);
 
+    //text plane
+    let text_plane_test_tex = engine.load_textured(std::path::Path::new("content/room2.fbx"))?;
+    let text_plane_mesh = engine.load_textured(std::path::Path::new("content/text_plane.fbx"))?;
+    let text_plane_model = engine.create_textured_model(text_plane_mesh, vec![tex]);
 
     //code for skinned model and gameObject
     let sprite_meshes = engine.load_skinned(
@@ -367,11 +419,15 @@ fn main() -> Result<()> {
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
         tex_model: Textured {
+<<<<<<< HEAD
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), SCALE),
+=======
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
                 Rotor3::identity(),
                 0.01,
             ),
+>>>>>>> 32e7da614f642d5f382cddbbab6c75d905a2ec0d
             model: char_model.clone(),
             name: String::from("Sprite"),
         },
@@ -386,7 +442,7 @@ fn main() -> Result<()> {
         //inventory: vec![],
         rooms: rooms,
         is_finished: false,
-        gameplaystate: GameplayState::Play,
+        gameplaystate: GameplayState::Mainscreen,
     };
 
     let world = World {
@@ -395,13 +451,12 @@ fn main() -> Result<()> {
         things: vec![sprite_obj],
         sprites: vec![game_sprite],
         flats: vec![],
-        textured: vec![],
-        //here is the code for the standard character model
-        //vec![Textured {
-        //     trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 0.05),
-        //     model: char_model.clone(),
-        //     name: String::from("Character"),
-        // }],
+        //textured: vec![],
+        textured: vec![Textured {
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 80.0),
+            model: text_plane_model.clone(),
+            name: String::from("text plane"),
+        }],
         door1: Textured {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
