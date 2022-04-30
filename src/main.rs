@@ -74,6 +74,7 @@ struct Sprite {
 impl Sprite {
     pub fn move_by(&mut self, vec: Vec3) {
         self.trf.append_translation(vec);
+        self.tex_model.trf.append_translation(vec);
     }
     pub fn check_collisions(&mut self, door: Door) -> bool {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
@@ -259,16 +260,53 @@ impl frenderer::World for World {
                 )),
             );
 
+<<<<<<< HEAD
             // //render the sprites
             for (s_i, s) in self.sprites.iter_mut().enumerate() {
                 rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
                 // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
             }
         }
+=======
+        for (obj_i, obj) in self.things.iter_mut().enumerate() {
+            rs.render_skinned(
+                5 as usize,
+                obj.model.clone(),
+                FSkinned::new(obj.animation, obj.state, obj.trf),
+            );
+        }
+
+         //render room
+         rs.render_textured(
+            6 as usize,
+            self.room.model.clone(),
+            FTextured::new(Similarity3::new(
+                Vec3::new(0.0,  ROOMSIZE/2., 0.0),
+                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                ROOMSIZE/2.),
+            )
+        );
+
+        // //render the sprites
+        // for (s_i, s) in self.sprites.iter_mut().enumerate() {
+        //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+        //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
+        // }
+>>>>>>> 32e7da614f642d5f382cddbbab6c75d905a2ec0d
 
         // for (m_i, m) in self.flats.iter_mut().enumerate() {
         //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
         // }
+<<<<<<< HEAD
+=======
+
+        //tricky: if rendering somehting the "key" needs to be unique for each one if it's the same rs function
+        rs.render_textured(7, self.sprites[0].tex_model.model.clone(), FTextured::new( self.sprites[0].tex_model.trf));
+
+        // for (t_i, t) in self.textured.iter_mut().enumerate() {
+        //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
+        // }
+>>>>>>> 32e7da614f642d5f382cddbbab6c75d905a2ec0d
     }
 }
 fn main() -> Result<()> {
@@ -342,7 +380,15 @@ fn main() -> Result<()> {
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
         tex_model: Textured {
+<<<<<<< HEAD
             trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), SCALE),
+=======
+            trf: Similarity3::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                Rotor3::identity(),
+                0.01,
+            ),
+>>>>>>> 32e7da614f642d5f382cddbbab6c75d905a2ec0d
             model: char_model.clone(),
             name: String::from("Sprite"),
         },
