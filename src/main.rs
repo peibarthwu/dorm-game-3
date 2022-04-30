@@ -74,6 +74,7 @@ struct Sprite {
 impl Sprite {
     pub fn move_by(&mut self, vec: Vec3) {
         self.trf.append_translation(vec);
+        self.tex_model.trf.append_translation(vec);
     }
     pub fn check_collisions(&mut self, door: Door) -> bool {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
@@ -250,17 +251,17 @@ impl frenderer::World for World {
         );
 
         // //render the sprites
-        for (s_i, s) in self.sprites.iter_mut().enumerate() {
-            rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-            // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
-        }
+        // for (s_i, s) in self.sprites.iter_mut().enumerate() {
+        //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+        //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
+        // }
 
         // for (m_i, m) in self.flats.iter_mut().enumerate() {
         //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
         // }
 
         //tricky: if rendering somehting the "key" needs to be unique for each one if it's the same rs function
-        // rs.render_textured(0, self.sprites[0].tex_model.model.clone(), FTextured::new( self.sprites[0].tex_model.trf));
+        rs.render_textured(7, self.sprites[0].tex_model.model.clone(), FTextured::new( self.sprites[0].tex_model.trf));
 
         // for (t_i, t) in self.textured.iter_mut().enumerate() {
         //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
@@ -337,7 +338,7 @@ fn main() -> Result<()> {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
                 Rotor3::identity(),
-                SCALE,
+                0.01,
             ),
             model: char_model.clone(),
             name: String::from("Sprite"),
