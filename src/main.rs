@@ -63,7 +63,9 @@ struct Sprite {
     tex: frenderer::assets::TextureRef,
     cel: Rect,
     size: Vec2,
+    tex_model: Textured,
     //figure out how to do this tex_model
+    //
     // tex_model: Vec<MeshRef<frenderer::renderer::flat::Mesh>>,
     // animation: AnimRef,
     //model: Rc<Model>,
@@ -98,6 +100,7 @@ struct World {
     door2: Textured,
     door3: Textured,
     door4: Textured,
+    room: Textured,
     state: GameState,
 }
 struct Flat {
@@ -124,7 +127,6 @@ impl frenderer::World for World {
         } else if self.state.gameplaystate == GameplayState::Play {
             //to get this to work we need to modify frenderer engine's ".render bit"
             //so that it doesn't render everything onto the screen
-        }
 
         //trying to get it to move
         for obj in self.things.iter_mut() {
@@ -170,6 +172,9 @@ impl frenderer::World for World {
         self.camera
             .transform
             .prepend_rotation(Rotor3::from_rotation_xz(camera_drot));
+        
+        }
+
     }
     fn render(
         &mut self,
@@ -233,18 +238,33 @@ impl frenderer::World for World {
             );
         }
 
-        //render the sprites
+         //render room
+         rs.render_textured(
+            6 as usize,
+            self.room.model.clone(),
+            FTextured::new(Similarity3::new(
+                Vec3::new(0.0,  ROOMSIZE/2., 0.0),
+                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                ROOMSIZE/2.),
+            )
+        );
+
+        // //render the sprites
         for (s_i, s) in self.sprites.iter_mut().enumerate() {
             rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+            // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
         }
+
         // for (m_i, m) in self.flats.iter_mut().enumerate() {
         //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
         // }
 
         //tricky: if rendering somehting the "key" needs to be unique for each one if it's the same rs function
-        for (t_i, t) in self.textured.iter_mut().enumerate() {
-            rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
-        }
+        // rs.render_textured(0, self.sprites[0].tex_model.model.clone(), FTextured::new( self.sprites[0].tex_model.trf));
+
+        // for (t_i, t) in self.textured.iter_mut().enumerate() {
+        //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
+        // }
     }
 }
 fn main() -> Result<()> {
@@ -275,6 +295,11 @@ fn main() -> Result<()> {
     //door model (old)
     let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
     let door_model = engine.create_textured_model(door, vec![tex]);
+
+    // room model
+    let room = engine.load_textured(std::path::Path::new("content/room2.fbx"))?;
+    let room_model = engine.create_textured_model(room, vec![tex]);
+
 
     //code for skinned model and gameObject
     let sprite_meshes = engine.load_skinned(
@@ -308,6 +333,15 @@ fn main() -> Result<()> {
         size: Vec2::new(16.0, 16.0),
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
+        tex_model: Textured {
+            trf: Similarity3::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                Rotor3::identity(),
+                SCALE,
+            ),
+            model: char_model.clone(),
+            name: String::from("Sprite"),
+        },
     };
 
     let rooms = generate_rooms(5);
@@ -370,6 +404,15 @@ fn main() -> Result<()> {
             ),
             model: door_model.clone(),
             name: String::from("Door2"),
+        },
+        room: Textured {
+            trf: Similarity3::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
+                SCALE,
+            ),
+            model: room_model.clone(),
+            name: String::from("Room"),
         },
         state: game_state,
     };
