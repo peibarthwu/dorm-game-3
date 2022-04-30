@@ -18,6 +18,9 @@ const SPEED: f32 = 0.25;
 const ROOMSIZE: f32 = 60.0;
 const COLLISION_RADIUS: f32 = 1.0;
 const SCALE: f32 = 10.0;
+const DOOR_WIDTH: f32 = 0.177;
+const DOOR_DEPTH: f32 = 0.07;
+
 
 #[derive(Clone)]
 
@@ -78,9 +81,37 @@ impl Sprite {
     }
     pub fn check_collisions(&mut self, door: Door) -> bool {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
-        return (self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x / 2.
-            && (self.trf.translation.z - door_worldspace.translation.z).abs() <= COLLISION_RADIUS;
-        // if self.cel.contains(door_worldspace.translation)
+        if door.direction == Direction::North{
+            return (self.trf.translation.z >= door_worldspace.translation.z - DOOR_DEPTH*SCALE && 
+                self.trf.translation.x <= door_worldspace.translation.x + DOOR_WIDTH*SCALE/2.0 && 
+                self.trf.translation.x >= door_worldspace.translation.x - DOOR_WIDTH*SCALE/2.0);
+        }
+        else if door.direction == Direction::South{
+            return (self.trf.translation.z <= door_worldspace.translation.z + DOOR_DEPTH*SCALE && 
+                self.trf.translation.x <= door_worldspace.translation.x + DOOR_WIDTH*SCALE/2.0 && 
+                self.trf.translation.x >= door_worldspace.translation.x - DOOR_WIDTH*SCALE/2.0);
+        }
+        else if door.direction == Direction::East{
+            return (self.trf.translation.x >= door_worldspace.translation.x - DOOR_DEPTH*SCALE && 
+                self.trf.translation.z <= door_worldspace.translation.z + DOOR_WIDTH*SCALE/2.0 && 
+                self.trf.translation.z >= door_worldspace.translation.z - DOOR_WIDTH*SCALE/2.0);
+        }
+        else if door.direction == Direction::South{
+            return (self.trf.translation.x <= door_worldspace.translation.x + DOOR_DEPTH*SCALE && 
+                self.trf.translation.z <= door_worldspace.translation.z + DOOR_WIDTH*SCALE/2.0 && 
+                self.trf.translation.z >= door_worldspace.translation.z - DOOR_WIDTH*SCALE/2.0);
+        }else{
+            return false;
+        }
+        // let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
+        
+        // let door_collider_rect = Rect::new(door_worldspace.translation.x, door_worldspace.translation.y, self.door_collider.x,  self.door_collider.x);
+        // return (self.trf.translation.x <= door_worldspace.translation.x && self.pos.y <= other.pos.y && obr.x <= br.x && obr.y <= br.y
+
+            
+        //     self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x / 2.
+        //     && (self.trf.translation.z - door_worldspace.translation.z).abs() <= COLLISION_RADIUS;
+        // // if self.cel.contains(door_worldspace.translation)
     }
 }
 
@@ -102,6 +133,7 @@ struct World {
     door3: Textured,
     door4: Textured,
     room: Textured,
+    door_collider: Vec2,
     state: GameState,
 }
 struct Flat {
@@ -251,10 +283,10 @@ impl frenderer::World for World {
         );
 
         // //render the sprites
-        // for (s_i, s) in self.sprites.iter_mut().enumerate() {
-        //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-        //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
-        // }
+        for (s_i, s) in self.sprites.iter_mut().enumerate() {
+            rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+            // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
+        }
 
         // for (m_i, m) in self.flats.iter_mut().enumerate() {
         //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
@@ -293,7 +325,7 @@ fn main() -> Result<()> {
     let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
     let char_model = engine.create_textured_model(model, vec![tex]);
 
-    //door model (old)
+    //door model
     let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
     let door_model = engine.create_textured_model(door, vec![tex]);
 
@@ -330,7 +362,7 @@ fn main() -> Result<()> {
     );
 
     let game_sprite = Sprite {
-        trf: Isometry3::new(Vec3::new(20.0, 5.0, -10.0), Rotor3::identity()),
+        trf: Isometry3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::from_euler_angles(-PI/2.0, -PI /2.0, 0.0)),
         size: Vec2::new(16.0, 16.0),
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
@@ -415,6 +447,7 @@ fn main() -> Result<()> {
             model: room_model.clone(),
             name: String::from("Room"),
         },
+        door_collider: Vec2::new(DOOR_WIDTH*SCALE, DOOR_DEPTH*SCALE),
         state: game_state,
     };
     engine.play(world)
@@ -509,40 +542,3 @@ fn get_spawn_dir(dir: Direction) -> Direction {
         Other => Direction::West,
     }
 }
-
-// let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
-// let char_model = engine.create_textured_model(model, vec![tex]);
-
-// let meshes = engine.load_skinned(
-//     std::path::Path::new("content/characterSmall.fbx"),
-//     &["RootNode", "Root"],
-// )?;
-// let animation = engine.load_anim(
-//     std::path::Path::new("content/kick.fbx"),
-//     meshes[0],
-//     AnimationSettings { looping: true },
-//     "Root|Kick",
-// )?;
-// let model = engine.create_skinned_model(meshes, vec![tex]);
-
-// let door_1 = Door {
-//     direction: Direction::North,
-//     target: 0,
-// };
-// let door_2 = Door {
-//     direction: Direction::East,
-//     target: 0,
-// };
-// let door_3 = Door {
-//     direction: Direction::South,
-//     target: 0,
-// };
-// let door_4 = Door {
-//     direction: Direction::West,
-//     target: 0,
-// };
-// let starting_room = Room {
-//     doors: vec![door_1, door_2, door_3, door_4],
-//     // floor: engine.load_texture(std::path::Path::new("content/robot.png"))?,
-//     objects: vec![],
-// };
