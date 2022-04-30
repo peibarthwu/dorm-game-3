@@ -35,15 +35,15 @@ pub enum Direction {
 pub struct Room {
     pub doors: Vec<Door>,
     // pub floor: TextureRef,        //figure out the type for a texture
-    pub objects: Vec<GameObject>, //vec of game objects, perhaps including a key
+    // pub objects: Vec<GameObject>, //vec of game objects, perhaps including a key
 }
 
 impl Room {
-    pub fn new(doors: Vec<Door>, objects: Vec<GameObject>) -> Self {
+    pub fn new(doors: Vec<Door>) -> Self {
         return Room {
             doors,
             // floor,
-            objects,
+            // objects,
         };
     }
 }

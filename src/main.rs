@@ -152,15 +152,16 @@ impl frenderer::World for World {
         let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
-        let to_the_moon = Vec3::new(0.0, 100.0, 0.0);
+        let to_the_moon = Vec3::new(10000.0, 10000.0, 0.0);
 
         //controls for gameplaystate mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
-                self.state.gameplaystate = GameplayState::Play;
                 for obj in self.textured.iter_mut() {
                     obj.trf.append_translation(to_the_moon);
                 }
+                self.state.gameplaystate = GameplayState::Play;
+                
             }
         }
         //controls for gameplaystate play
@@ -189,10 +190,12 @@ impl frenderer::World for World {
                     s.move_by(Vec3::new(SPEED, 0.0, 0.0));
                 }
                 for door in self.state.rooms[self.state.current_room].doors.iter() {
-                    if (s.check_collisions(*door)) {
+                    if s.check_collisions(*door) {
                         self.state.current_room = door.target;
                         s.trf.translation = get_trf(door.direction, ROOMSIZE, SCALE).translation;
+                        s.tex_model.trf.translation = get_trf(door.direction, ROOMSIZE, SCALE).translation;
                         dbg!({ "" }, self.state.current_room);
+                        dbg!({ "" }, s.tex_model.trf.translation);
                     }
                 }
             }
@@ -227,7 +230,14 @@ impl frenderer::World for World {
         else if self.state.gameplaystate == GameplayState::Play {
             //render the doors in the correct positions
             let door_list = &self.state.rooms[self.state.current_room].doors;
+
+            //we still need to render the plane
+            for (t_i, t) in self.textured.iter_mut().enumerate() {
+                rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
+            }
+
             let mut tex_render_key = 0 as usize;
+            //place doors
             if door_list.len() > 0 {
                 rs.render_textured(
                     0 as usize,
@@ -273,13 +283,13 @@ impl frenderer::World for World {
                 );
             }
 
-            for (obj_i, obj) in self.things.iter_mut().enumerate() {
-                rs.render_skinned(
-                    5 as usize,
-                    obj.model.clone(),
-                    FSkinned::new(obj.animation, obj.state, obj.trf),
-                );
-            }
+            // for (obj_i, obj) in self.things.iter_mut().enumerate() {
+            //     rs.render_skinned(
+            //         5 as usize,
+            //         obj.model.clone(),
+            //         FSkinned::new(obj.animation, obj.state, obj.trf),
+            //     );
+            // }
 
             //render room
             rs.render_textured(
@@ -300,6 +310,7 @@ impl frenderer::World for World {
                 );
             }
 
+            //render sprite
             rs.render_textured(
                 8,
                 self.sprites[0].tex_model.model.clone(),
@@ -393,7 +404,7 @@ fn main() -> Result<()> {
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
         tex_model: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), SCALE),
+            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 0.01),
             model: char_model.clone(),
             name: String::from("Sprite"),
         },
@@ -505,7 +516,7 @@ fn generate_rooms(num_rooms: u32) -> Vec<Room> {
     let mut rng = rand::thread_rng();
     for n in 0..num_rooms {
         let doors = generate_doors(rng.gen_range(1..4), num_rooms);
-        let room = Room::new(doors, vec![]);
+        let room = Room::new(doors);
         vec.push(room);
     }
     return vec;
@@ -550,7 +561,7 @@ fn get_dir(num: u32) -> Direction {
         1 => Direction::East,
         2 => Direction::South,
         3 => Direction::West,
-        Other => Direction::West,
+        _Other => Direction::West,
     }
 }
 
@@ -560,6 +571,68 @@ fn get_spawn_dir(dir: Direction) -> Direction {
         Direction::South => Direction::North,
         Direction::East => Direction::West,
         Direction::West => Direction::East,
-        Other => Direction::West,
     }
+}
+
+
+// fn generate_room_map(num_rooms: u32, num_doors: u32) -> Vec<Room> {
+//     let mut vec = Vec::<Room>::new();
+//     let mut n = 0;
+//     //create n rooms
+
+//     while n < num_rooms - 1 {
+//         if vec.len() == 0 {
+//             let mut room = Room::new(vec![]); //create room with the first door
+//             //if we arent on the last room we can add a door
+//             let door = gen_valid_door(room, num_rooms);    //generate random door //NEED TO CHECK IF VALID DOOR
+//             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
+//             room.doors.push(door); //add door to room
+//             let room2 = Room::new(vec![back_door]); //create next room
+//             vec.push(room);
+//             vec.push(room2);
+//         } else {
+//             let mut room = &vec[n as usize]; //create room with the first door
+//             //if we arent on the last room we can add a door
+//             let door = gen_valid_door(room, num_rooms);    //generate random door //NEED TO CHECK IF VALID DOOR
+//             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
+//             vec[n as usize].doors.push(door); //add door to room
+//             let room2 = Room::new(vec![back_door]); //create next room
+//             vec.push(room2);
+//         }
+//         n += 1;
+//     }
+//     return vec;
+// }
+
+// fn gen_valid_door(room: Room, num_rooms: u32) -> Door{
+//     let mut door = generate_door(num_rooms);
+//     let mut check = check_valid_door(door, room);
+//     while !check {
+//         door = generate_door(num_rooms);
+//         check = check_valid_door(door, room);
+//     }
+//     return door;
+// }
+
+// fn check_valid_door(door: Door, room: Room) -> bool{ //room is current room
+//     let mut check = true;
+//     for n in 0..room.doors.len() {
+//         if door.direction == room.doors[n].direction {
+//             check = false;
+//         }
+//     }
+//     return check;
+// }
+
+//return a new door on oppoisite side that points back to the previous room
+fn create_bidirectional_door(door: Door, cur_room: usize) -> Door {
+    return Door::new(get_spawn_dir(door.direction), cur_room, door.direction);
+}
+
+//generate a door with random direction and target
+fn generate_door(num_rooms: u32) -> Door {
+    let mut rng = rand::thread_rng();
+    let direction = get_dir(rng.gen_range(0..3));
+    let target = rng.gen_range(0..num_rooms) as usize;
+    return Door::new(direction, target, get_spawn_dir(direction));
 }
