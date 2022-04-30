@@ -292,38 +292,33 @@ impl frenderer::World for World {
                 )),
             );
 
-        for (obj_i, obj) in self.things.iter_mut().enumerate() {
-            rs.render_skinned(
-                5 as usize,
-                obj.model.clone(),
-                FSkinned::new(obj.animation, obj.state, obj.trf),
+            for (obj_i, obj) in self.things.iter_mut().enumerate() {
+                rs.render_skinned(
+                    7 as usize,
+                    obj.model.clone(),
+                    FSkinned::new(obj.animation, obj.state, obj.trf),
+                );
+            }
+
+            rs.render_textured(
+                8,
+                self.sprites[0].tex_model.model.clone(),
+                FTextured::new(self.sprites[0].tex_model.trf),
             );
-        }
 
-         //render room
-         rs.render_textured(
-            6 as usize,
-            self.room.model.clone(),
-            FTextured::new(Similarity3::new(
-                Vec3::new(0.0,  ROOMSIZE/2., 0.0),
-                Rotor3::from_euler_angles(0.0, 0.0, 0.0),
-                ROOMSIZE/2.),
-            )
-        );
+            // //render the sprites
+            // for (s_i, s) in self.sprites.iter_mut().enumerate() {
+            //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+            //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
+            // }
 
-        // //render the sprites
-        for (s_i, s) in self.sprites.iter_mut().enumerate() {
-            rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-            // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
-        }
-        // for (s_i, s) in self.sprites.iter_mut().enumerate() {
-        //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-        //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
-        // }
+            // for (m_i, m) in self.flats.iter_mut().enumerate() {
+            //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
+            // }
 
-        // for (m_i, m) in self.flats.iter_mut().enumerate() {
-        //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
-        // }
+            // for (t_i, t) in self.textured.iter_mut().enumerate() {
+            //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
+            // }
         }
     }
 }
@@ -372,10 +367,10 @@ fn main() -> Result<()> {
     )?;
 
     let sprite_animation = engine.load_anim(
-        std::path::Path::new("content/kick.fbx"),
+        std::path::Path::new("content/run.fbx"),
         sprite_meshes[0],
         AnimationSettings { looping: true },
-        "Root|Kick",
+        "Root|Run",
     )?;
     let sprite_texture = engine.load_texture(std::path::Path::new("content/robot.png"))?;
     let sprite_model = engine.create_skinned_model(sprite_meshes, vec![sprite_texture]);
@@ -385,7 +380,7 @@ fn main() -> Result<()> {
         Similarity3::new(
             Vec3::new(0.0, 0.0, 0.0),
             Rotor3::from_euler_angles(0.0, 0.0, 0.0),
-            1.0,
+            0.1,
         ),
         sprite_model,
         sprite_animation,
