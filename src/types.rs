@@ -33,13 +33,13 @@ pub enum Direction {
 
 #[derive(Clone)]
 pub struct Room {
-    pub doors: Vec<Door>,
+    pub doors: Vec<usize>,
     // pub floor: TextureRef,        //figure out the type for a texture
     // pub objects: Vec<GameObject>, //vec of game objects, perhaps including a key
 }
 
 impl Room {
-    pub fn new(doors: Vec<Door>) -> Self {
+    pub fn new(doors: Vec<usize>) -> Self {
         return Room {
             doors,
             // floor,

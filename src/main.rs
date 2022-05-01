@@ -18,6 +18,7 @@ const SPEED: f32 = 0.25;
 const ROOMSIZE: f32 = 60.0;
 const COLLISION_RADIUS: f32 = 1.0;
 const SCALE: f32 = 10.0;
+const BUFFER: f32 = 5.0;
 const DOOR_WIDTH: f32 = 0.177;
 const DOOR_DEPTH: f32 = 0.07;
 
@@ -30,6 +31,7 @@ pub struct GameState {
     pub key_index: usize,
     //pub inventory: Vec<GameObject>,
     pub rooms: Vec<Room>,
+    pub doors: Vec<Door>,
     pub is_finished: bool,
     pub gameplaystate: GameplayState,
 }
@@ -82,24 +84,24 @@ impl Sprite {
     pub fn check_collisions(&mut self, door: Door) -> bool {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
         if door.direction == Direction::North{
-            return (self.trf.translation.z >= door_worldspace.translation.z - DOOR_DEPTH*SCALE && 
+            return self.trf.translation.z >= door_worldspace.translation.z - DOOR_DEPTH*SCALE && 
                 self.trf.translation.x <= door_worldspace.translation.x + DOOR_WIDTH*SCALE/2.0 && 
-                self.trf.translation.x >= door_worldspace.translation.x - DOOR_WIDTH*SCALE/2.0);
+                self.trf.translation.x >= door_worldspace.translation.x - DOOR_WIDTH*SCALE/2.0;
         }
         else if door.direction == Direction::South{
-            return (self.trf.translation.z <= door_worldspace.translation.z + DOOR_DEPTH*SCALE && 
+            return self.trf.translation.z <= door_worldspace.translation.z + DOOR_DEPTH*SCALE && 
                 self.trf.translation.x <= door_worldspace.translation.x + DOOR_WIDTH*SCALE/2.0 && 
-                self.trf.translation.x >= door_worldspace.translation.x - DOOR_WIDTH*SCALE/2.0);
+                self.trf.translation.x >= door_worldspace.translation.x - DOOR_WIDTH*SCALE/2.0;
         }
         else if door.direction == Direction::East{
-            return (self.trf.translation.x >= door_worldspace.translation.x - DOOR_DEPTH*SCALE && 
+            return self.trf.translation.x >= door_worldspace.translation.x - DOOR_DEPTH*SCALE && 
                 self.trf.translation.z <= door_worldspace.translation.z + DOOR_WIDTH*SCALE/2.0 && 
-                self.trf.translation.z >= door_worldspace.translation.z - DOOR_WIDTH*SCALE/2.0);
+                self.trf.translation.z >= door_worldspace.translation.z - DOOR_WIDTH*SCALE/2.0;
         }
         else if door.direction == Direction::South{
-            return (self.trf.translation.x <= door_worldspace.translation.x + DOOR_DEPTH*SCALE && 
+            return self.trf.translation.x <= door_worldspace.translation.x + DOOR_DEPTH*SCALE && 
                 self.trf.translation.z <= door_worldspace.translation.z + DOOR_WIDTH*SCALE/2.0 && 
-                self.trf.translation.z >= door_worldspace.translation.z - DOOR_WIDTH*SCALE/2.0);
+                self.trf.translation.z >= door_worldspace.translation.z - DOOR_WIDTH*SCALE/2.0;
         }else{
             return false;
         }
@@ -189,11 +191,12 @@ impl frenderer::World for World {
                 if input.is_key_down(Key::D) {
                     s.move_by(Vec3::new(SPEED, 0.0, 0.0));
                 }
-                for door in self.state.rooms[self.state.current_room].doors.iter() {
-                    if s.check_collisions(*door) {
+                for dooridx in self.state.rooms[self.state.current_room].doors.iter() {
+                    let door = self.state.doors[*dooridx as usize];
+                    if s.check_collisions(door) {
                         self.state.current_room = door.target;
-                        s.trf.translation = get_trf(door.direction, ROOMSIZE, SCALE).translation;
-                        s.tex_model.trf.translation = get_trf(door.direction, ROOMSIZE, SCALE).translation;
+                        s.trf.translation = get_spawn_pos(door.direction);
+                        s.tex_model.trf.translation = get_spawn_pos(door.direction);
                         dbg!({ "" }, self.state.current_room);
                         dbg!({ "" }, s.tex_model.trf.translation);
                     }
@@ -243,7 +246,7 @@ impl frenderer::World for World {
                     0 as usize,
                     self.door1.model.clone(),
                     FTextured::new(get_trf(
-                        door_list[0].direction,
+                        self.state.doors[door_list[0]].direction,
                         ROOMSIZE,
                         self.door1.trf.scale,
                     )),
@@ -254,7 +257,7 @@ impl frenderer::World for World {
                     1 as usize,
                     self.door2.model.clone(),
                     FTextured::new(get_trf(
-                        door_list[1].direction,
+                        self.state.doors[door_list[1]].direction,
                         ROOMSIZE,
                         self.door2.trf.scale,
                     )),
@@ -265,7 +268,7 @@ impl frenderer::World for World {
                     2 as usize,
                     self.door3.model.clone(),
                     FTextured::new(get_trf(
-                        door_list[2].direction,
+                        self.state.doors[door_list[2]].direction,
                         ROOMSIZE,
                         self.door3.trf.scale,
                     )),
@@ -276,7 +279,7 @@ impl frenderer::World for World {
                     3 as usize,
                     self.door4.model.clone(),
                     FTextured::new(get_trf(
-                        door_list[3].direction,
+                        self.state.doors[door_list[3]].direction,
                         ROOMSIZE,
                         self.door4.trf.scale,
                     )),
@@ -399,7 +402,7 @@ fn main() -> Result<()> {
     );
 
     let game_sprite = Sprite {
-        trf: Isometry3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::from_euler_angles(-PI/2.0, -PI /2.0, 0.0)),
+        trf: Isometry3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::from_euler_angles(-PI/2.0, -PI /2.0, 0.0)), //change to Rotor3::identity() to see the plane
         size: Vec2::new(16.0, 16.0),
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
@@ -410,14 +413,15 @@ fn main() -> Result<()> {
         },
     };
 
-    let rooms = generate_rooms(5);
+    // let rooms = generate_rooms(5);
 
     let game_state = GameState {
         current_room: 0, //index of room in rooms
         max_rooms: 3,
         key_index: 2,
         //inventory: vec![],
-        rooms: rooms,
+        rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
+        doors: vec![Door::new(Direction::North, 1, Direction::South), Door::new(Direction::South, 0, Direction::North)],
         is_finished: false,
         gameplaystate: GameplayState::Mainscreen,
     };
@@ -511,49 +515,49 @@ fn get_trf(dir: Direction, room_size: f32, scale: f32) -> Similarity3 {
     }
 }
 
-fn generate_rooms(num_rooms: u32) -> Vec<Room> {
-    let mut vec = Vec::<Room>::new();
-    let mut rng = rand::thread_rng();
-    for n in 0..num_rooms {
-        let doors = generate_doors(rng.gen_range(1..4), num_rooms);
-        let room = Room::new(doors);
-        vec.push(room);
-    }
-    return vec;
-}
+// fn generate_rooms(num_rooms: u32) -> Vec<Room> {
+//     let mut vec = Vec::<Room>::new();
+//     let mut rng = rand::thread_rng();
+//     for n in 0..num_rooms {
+//         let doors = generate_doors(rng.gen_range(1..4), num_rooms);
+//         let room = Room::new(doors);
+//         vec.push(room);
+//     }
+//     return vec;
+// }
 
-fn generate_doors(num_doors: u32, num_rooms: u32) -> Vec<Door> {
-    let mut vec = Vec::<Door>::new();
-    let mut dirs = Vec::<Direction>::new();
-    let mut rng = rand::thread_rng();
-    //generate directions
-    //no two doors can be in the same direction
-    let mut contains = false;
-    let mut length = dirs.len();
-    while length < num_doors as usize {
-        let next_direction = get_dir(rng.gen_range(0..3));
-        for direction in &*dirs {
-            if next_direction == *direction {
-                contains = true;
-            }
-        }
-        if !contains {
-            dirs.push(next_direction);
-            length += 1;
-            dbg!(length);
-        }
-        contains = false;
-    }
-    for n in 0..num_doors {
-        let mut target = rng.gen_range(0..num_rooms as usize);
-        while target == n as usize {
-            target = rng.gen_range(0..num_rooms as usize);
-        }
-        let door = Door::new(dirs[n as usize], target, get_spawn_dir(dirs[n as usize]));
-        vec.push(door);
-    }
-    return vec;
-}
+// fn generate_doors(num_doors: u32, num_rooms: u32) -> Vec<Door> {
+//     let mut vec = Vec::<Door>::new();
+//     let mut dirs = Vec::<Direction>::new();
+//     let mut rng = rand::thread_rng();
+//     //generate directions
+//     //no two doors can be in the same direction
+//     let mut contains = false;
+//     let mut length = dirs.len();
+//     while length < num_doors as usize {
+//         let next_direction = get_dir(rng.gen_range(0..3));
+//         for direction in &*dirs {
+//             if next_direction == *direction {
+//                 contains = true;
+//             }
+//         }
+//         if !contains {
+//             dirs.push(next_direction);
+//             length += 1;
+//             dbg!(length);
+//         }
+//         contains = false;
+//     }
+//     for n in 0..num_doors {
+//         let mut target = rng.gen_range(0..num_rooms as usize);
+//         while target == n as usize {
+//             target = rng.gen_range(0..num_rooms as usize);
+//         }
+//         let door = Door::new(dirs[n as usize], target, get_spawn_dir(dirs[n as usize]));
+//         vec.push(door);
+//     }
+//     return vec;
+// }
 
 fn get_dir(num: u32) -> Direction {
     match num {
@@ -574,65 +578,86 @@ fn get_spawn_dir(dir: Direction) -> Direction {
     }
 }
 
+fn get_spawn_pos(dir: Direction) -> Vec3 {
+    let spawn_dir = get_spawn_dir(dir);
+    let mut spawn_loca = get_trf(spawn_dir, ROOMSIZE, SCALE).translation;
+    //need to adjust so no oscilarting
+    if spawn_dir ==  Direction::North{
+        spawn_loca.z -= BUFFER;
+    } else if spawn_dir ==  Direction::South{
+        spawn_loca.z += BUFFER;
+    }
+    else if spawn_dir ==  Direction::East{
+        spawn_loca.x -= BUFFER;
+    } 
+    else {
+        spawn_loca.x += BUFFER;
+    }
+    return spawn_loca;
+}
 
-// fn generate_room_map(num_rooms: u32, num_doors: u32) -> Vec<Room> {
-//     let mut vec = Vec::<Room>::new();
+
+
+// fn generate_room_map(num_rooms: u32, num_doors: u32) -> (Vec<Room>,Vec<Door>) {
+//     let mut rooms = Vec::<Room>::new();
+//     let mut doors = Vec::<Door>::new();
 //     let mut n = 0;
 //     //create n rooms
 
-//     while n < num_rooms - 1 {
-//         if vec.len() == 0 {
+//     while n < num_rooms - 1 { //if we arent on the last room we can add a door
+//         if rooms.len() == 0 {
 //             let mut room = Room::new(vec![]); //create room with the first door
-//             //if we arent on the last room we can add a door
-//             let door = gen_valid_door(room, num_rooms);    //generate random door //NEED TO CHECK IF VALID DOOR
+//             let door = gen_valid_door(room, num_rooms, doors);    //generate random door //NEED TO CHECK IF VALID DOOR
 //             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
-//             room.doors.push(door); //add door to room
-//             let room2 = Room::new(vec![back_door]); //create next room
-//             vec.push(room);
-//             vec.push(room2);
+//             doors.push(door); //add door to the list of doors
+//             room.doors.push(n as usize); //add door to room
+//             doors.push(back_door); //add door to the list of doors
+//             let room2 = Room::new(vec![n as usize + 1]); //create next room
+//             rooms.push(room);
+//             rooms.push(room2);
 //         } else {
-//             let mut room = &vec[n as usize]; //create room with the first door
-//             //if we arent on the last room we can add a door
-//             let door = gen_valid_door(room, num_rooms);    //generate random door //NEED TO CHECK IF VALID DOOR
+//             let mut room = rooms[n as usize]; //get last room
+//             // add another door
+//             let door = gen_valid_door(room, num_rooms, doors);    //generate random door //NEED TO CHECK IF VALID DOOR
 //             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
-//             vec[n as usize].doors.push(door); //add door to room
-//             let room2 = Room::new(vec![back_door]); //create next room
-//             vec.push(room2);
+//             rooms[n as usize].doors.push(n as usize); //add door to room
+//             let room2 = Room::new(vec![n as usize + 1]); //create next room
+//             rooms.push(room2);
 //         }
 //         n += 1;
 //     }
-//     return vec;
+//     return (rooms, doors);
 // }
 
-// fn gen_valid_door(room: Room, num_rooms: u32) -> Door{
+// fn gen_valid_door(room: Room, num_rooms: u32, doors: &Vec<Door>) -> Door{
 //     let mut door = generate_door(num_rooms);
-//     let mut check = check_valid_door(door, room);
+//     let mut check = check_valid_door(door, room, doors);
 //     while !check {
 //         door = generate_door(num_rooms);
-//         check = check_valid_door(door, room);
+//         check = check_valid_door(door, room, doors);
 //     }
 //     return door;
 // }
 
-// fn check_valid_door(door: Door, room: Room) -> bool{ //room is current room
+// fn check_valid_door(door: Door, room: Room, doors: Vec<Door>) -> bool{ //room is current room
 //     let mut check = true;
 //     for n in 0..room.doors.len() {
-//         if door.direction == room.doors[n].direction {
+//         if door.direction == doors[room.doors[n]].direction {
 //             check = false;
 //         }
 //     }
 //     return check;
 // }
 
-//return a new door on oppoisite side that points back to the previous room
-fn create_bidirectional_door(door: Door, cur_room: usize) -> Door {
-    return Door::new(get_spawn_dir(door.direction), cur_room, door.direction);
-}
+// //return a new door on oppoisite side that points back to the previous room
+// fn create_bidirectional_door(door: Door, cur_room: usize) -> Door {
+//     return Door::new(get_spawn_dir(door.direction), cur_room, door.direction);
+// }
 
-//generate a door with random direction and target
-fn generate_door(num_rooms: u32) -> Door {
-    let mut rng = rand::thread_rng();
-    let direction = get_dir(rng.gen_range(0..3));
-    let target = rng.gen_range(0..num_rooms) as usize;
-    return Door::new(direction, target, get_spawn_dir(direction));
-}
+// //generate a door with random direction and target
+// fn generate_door(num_rooms: u32) -> Door {
+//     let mut rng = rand::thread_rng();
+//     let direction = get_dir(rng.gen_range(0..3));
+//     let target = rng.gen_range(0..num_rooms) as usize;
+//     return Door::new(direction, target, get_spawn_dir(direction));
+// }
