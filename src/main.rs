@@ -104,27 +104,27 @@ impl Sprite {
         if door.direction == Direction::North {
             return self.trf.translation.z >= door_worldspace.translation.z - DOOR_DEPTH * SCALE
                 && self.trf.translation.x
-                    <= door_worldspace.translation.x + DOOR_WIDTH * SCALE / 2.0
+                    <= door_worldspace.translation.x + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.x
-                    >= door_worldspace.translation.x - DOOR_WIDTH * SCALE / 2.0;
+                    >= door_worldspace.translation.x - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::South {
             return self.trf.translation.z <= door_worldspace.translation.z + DOOR_DEPTH * SCALE
                 && self.trf.translation.x
-                    <= door_worldspace.translation.x + DOOR_WIDTH * SCALE / 2.0
+                    <= door_worldspace.translation.x + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.x
-                    >= door_worldspace.translation.x - DOOR_WIDTH * SCALE / 2.0;
+                    >= door_worldspace.translation.x - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::East {
             return self.trf.translation.x >= door_worldspace.translation.x - DOOR_DEPTH * SCALE
                 && self.trf.translation.z
-                    <= door_worldspace.translation.z + DOOR_WIDTH * SCALE / 2.0
+                    <= door_worldspace.translation.z + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.z
-                    >= door_worldspace.translation.z - DOOR_WIDTH * SCALE / 2.0;
-        } else if door.direction == Direction::South {
+                    >= door_worldspace.translation.z - DOOR_WIDTH * SCALE * 3.0;
+        } else if door.direction == Direction::West {
             return self.trf.translation.x <= door_worldspace.translation.x + DOOR_DEPTH * SCALE
                 && self.trf.translation.z
-                    <= door_worldspace.translation.z + DOOR_WIDTH * SCALE / 2.0
+                    <= door_worldspace.translation.z + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.z
-                    >= door_worldspace.translation.z - DOOR_WIDTH * SCALE / 2.0;
+                    >= door_worldspace.translation.z - DOOR_WIDTH * SCALE * 3.0;
         } else {
             return false;
         }
