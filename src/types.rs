@@ -31,7 +31,7 @@ pub enum Direction {
     West,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Room {
     pub doors: Vec<usize>,
     // pub floor: TextureRef,        //figure out the type for a texture
