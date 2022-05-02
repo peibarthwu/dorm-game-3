@@ -1,16 +1,13 @@
 #![allow(dead_code)]
 use frenderer::animation::{AnimationSettings, AnimationState};
-use frenderer::assets::{AnimRef, MeshRef};
+use frenderer::assets::AnimRef;
 use frenderer::camera::{self, Camera};
 //use frenderer::image::Image;
-use frenderer::renderer::flat::SingleRenderState as FFlat;
 use frenderer::renderer::skinned::SingleRenderState as FSkinned;
-use frenderer::renderer::sprites::SingleRenderState as FSprite;
-use frenderer::renderer::textured::{Model, SingleRenderState as FTextured};
+use frenderer::renderer::textured::SingleRenderState as FTextured;
 use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
-use rand::Rng;
-use scene3d::types::{self, *};
+use scene3d::types::*;
 use std::rc::Rc;
 
 const DT: f64 = 1.0 / 60.0;
@@ -186,10 +183,6 @@ impl frenderer::World for World {
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
 
-        //working on the code to move the obj
-        let move_front_back = input.key_axis(Key::S, Key::W) * 1.0 * DT as f32;
-        let move_left_right = input.key_axis(Key::A, Key::D) * 1.0 * DT as f32;
-
         //controls for gameplaystate mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
@@ -199,12 +192,6 @@ impl frenderer::World for World {
         }
         //controls for gameplaystate play
         else if self.state.gameplaystate == GameplayState::Play {
-            for obj in self.things.iter_mut() {
-                //obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
-                // dbg!(obj.trf.rotation);
-                //obj.tick_animation();
-            }
-
             self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
@@ -659,7 +646,7 @@ fn get_dir(num: u32) -> Direction {
         1 => Direction::East,
         2 => Direction::South,
         3 => Direction::West,
-        _Other => Direction::West,
+        _other => Direction::West,
     }
 }
 
