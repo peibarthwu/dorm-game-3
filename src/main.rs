@@ -151,6 +151,7 @@ struct World {
     things: Vec<GameObject>,
     sprites: Vec<Sprite>,
     flats: Vec<Flat>,
+    main_screen_textured: Vec<Textured>,
     textured: Vec<Textured>,
     door1: Textured,
     door2: Textured,
@@ -168,6 +169,12 @@ struct Textured {
     trf: Similarity3,
     model: Rc<frenderer::renderer::textured::Model>,
     name: String,
+}
+
+impl Textured {
+    pub fn move_by(&mut self, vec: Vec3) {
+        self.trf.append_translation(vec);
+    }
 }
 impl frenderer::World for World {
     fn update(&mut self, input: &frenderer::Input, _assets: &mut frenderer::assets::Assets) {
@@ -188,7 +195,7 @@ impl frenderer::World for World {
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
                 for obj in self.textured.iter_mut() {
-                    obj.trf.translation += to_the_moon;
+                    obj.move_by(to_the_moon);
                 }
 
                 //self.textured[0].trf.append_translation(to_the_moon);
@@ -200,8 +207,10 @@ impl frenderer::World for World {
             for obj in self.things.iter_mut() {
                 //obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
                 // dbg!(obj.trf.rotation);
-                obj.tick_animation();
+                //obj.tick_animation();
             }
+
+            self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
                 //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
@@ -274,7 +283,7 @@ impl frenderer::World for World {
 
         //gameplaystate:: Mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
-            for (t_i, t) in self.textured.iter_mut().enumerate() {
+            for (t_i, t) in self.main_screen_textured.iter_mut().enumerate() {
                 rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
             }
         }
@@ -282,11 +291,6 @@ impl frenderer::World for World {
         else if self.state.gameplaystate == GameplayState::Play {
             //render the doors in the correct positions
             let door_list = &self.state.rooms[self.state.current_room].doors;
-
-            //we still need to render the plane
-            // for (t_i, t) in self.textured.iter_mut().enumerate() {
-            //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
-            // }
 
             let mut tex_render_key = 0 as usize;
             //place doors
@@ -335,13 +339,26 @@ impl frenderer::World for World {
                 );
             }
 
-            for (obj_i, obj) in self.things.iter_mut().enumerate() {
-                rs.render_skinned(
-                    5 as usize,
-                    obj.model.clone(),
-                    FSkinned::new(obj.animation, obj.state, obj.trf),
-                );
-            }
+            //rendering the game object
+            rs.render_skinned(
+                5 as usize,
+                self.things[0].model.clone(),
+                FSkinned::new(
+                    self.things[0].animation,
+                    self.things[0].state,
+                    self.things[0].trf,
+                ),
+            );
+
+            rs.render_skinned(
+                7 as usize,
+                self.things[0].model.clone(),
+                FSkinned::new(
+                    self.things[0].animation,
+                    self.things[0].state,
+                    self.things[0].trf,
+                ),
+            );
 
             //render room
             rs.render_textured(
@@ -354,26 +371,14 @@ impl frenderer::World for World {
                 )),
             );
 
-            for (obj_i, obj) in self.things.iter_mut().enumerate() {
-                rs.render_skinned(
-                    7 as usize,
-                    obj.model.clone(),
-                    FSkinned::new(obj.animation, obj.state, obj.trf),
-                );
-            }
-
             // //render the sprites
-            // for (s_i, s) in self.sprites.iter_mut().enumerate() {
-            //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-            // }
-            //render sprite
             rs.render_textured(
                 8,
                 self.sprites[0].tex_model.model.clone(),
                 FTextured::new(self.sprites[0].tex_model.trf),
             );
 
-            // //render the sprites
+            // Other render code
             // for (s_i, s) in self.sprites.iter_mut().enumerate() {
             //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
             //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
@@ -383,6 +388,16 @@ impl frenderer::World for World {
             //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
             // }
 
+            // for (t_i, t) in self.textured.iter_mut().enumerate() {
+            //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
+            // }
+
+            // for (s_i, s) in self.sprites.iter_mut().enumerate() {
+            //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+            // }
+            //render sprite
+
+            //we still need to render the plane
             // for (t_i, t) in self.textured.iter_mut().enumerate() {
             //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
             // }
@@ -423,9 +438,10 @@ fn main() -> Result<()> {
     let room_model = engine.create_textured_model(room, vec![tex]);
 
     //text plane
-    let text_plane_test_tex = engine.load_textured(std::path::Path::new("content/room2.fbx"))?;
+    let text_plane_test_tex =
+        engine.load_texture(std::path::Path::new("content/temp title texture.png"))?;
     let text_plane_mesh = engine.load_textured(std::path::Path::new("content/text_plane.fbx"))?;
-    let text_plane_model = engine.create_textured_model(text_plane_mesh, vec![tex]);
+    let text_plane_model = engine.create_textured_model(text_plane_mesh, vec![text_plane_test_tex]);
 
     //code for skinned model and gameObject
     let sprite_meshes = engine.load_skinned(
@@ -486,7 +502,7 @@ fn main() -> Result<()> {
             Door::new(Direction::South, 0, Direction::North),
         ],
         is_finished: false,
-        gameplaystate: GameplayState::Play,
+        gameplaystate: GameplayState::Mainscreen,
     };
 
     let world = World {
@@ -495,11 +511,12 @@ fn main() -> Result<()> {
         sprites: vec![game_sprite],
         flats: vec![],
         //textured: vec![],
-        textured: vec![Textured {
+        main_screen_textured: vec![Textured {
             trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 80.0),
             model: text_plane_model.clone(),
             name: String::from("text plane"),
         }],
+        textured: vec![],
         door1: Textured {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
