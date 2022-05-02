@@ -7,6 +7,7 @@ use frenderer::renderer::skinned::SingleRenderState as FSkinned;
 use frenderer::renderer::textured::SingleRenderState as FTextured;
 use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
+use rand::Rng;
 use scene3d::types::*;
 use std::rc::Rc;
 
@@ -705,18 +706,17 @@ fn get_spawn_pos(dir: Direction) -> Vec3 {
     return spawn_loca;
 }
 
-
-
-fn generate_room_map(num_rooms: u32, num_doors: u32) -> (Vec<Room>,Vec<Door>) {
+fn generate_room_map(num_rooms: u32, num_doors: u32) -> (Vec<Room>, Vec<Door>) {
     let mut rooms = Vec::<Room>::new();
     let mut doors = Vec::<Door>::new();
     let mut n = 0;
     //create n rooms
 
-    while n < num_rooms - 1 { //if we arent on the last room we can add a door
+    while n < num_rooms - 1 {
+        //if we arent on the last room we can add a door
         if rooms.len() == 0 {
             let mut room = Room::new(vec![]); //create room with the first door
-            let door = gen_valid_door(&room, num_rooms as i32, &doors);    //generate random door //NEED TO CHECK IF VALID DOOR
+            let door = gen_valid_door(&room, num_rooms as i32, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
             doors.push(door); //add door to the list of doors
             room.doors.push(n as usize); //add door to room
@@ -726,8 +726,8 @@ fn generate_room_map(num_rooms: u32, num_doors: u32) -> (Vec<Room>,Vec<Door>) {
             rooms.push(room2);
         } else {
             let mut room = &mut rooms[n as usize]; //get last room
-            // add another door
-            let door = gen_valid_door(&room, num_rooms as i32, &doors);    //generate random door //NEED TO CHECK IF VALID DOOR
+                                                   // add another door
+            let door = gen_valid_door(&room, num_rooms as i32, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
             rooms[n as usize].doors.push(n as usize); //add door to room
             let room2 = Room::new(vec![n as usize + 1]); //create next room
@@ -738,11 +738,11 @@ fn generate_room_map(num_rooms: u32, num_doors: u32) -> (Vec<Room>,Vec<Door>) {
     return (rooms, doors);
 }
 
-fn gen_valid_door(room: &Room, num_rooms: i32, doors: &[Door]) -> Door{
+fn gen_valid_door(room: &Room, num_rooms: i32, doors: &[Door]) -> Door {
     let mut door = generate_door(num_rooms);
     // let mut check = check_valid_door(door, room, doors);
     let mut check = true;
-    for n in 0..room.doors.len()-1  {
+    for n in 0..room.doors.len() - 1 {
         if door.direction == doors[room.doors[n]].direction {
             check = false;
         }
@@ -750,7 +750,7 @@ fn gen_valid_door(room: &Room, num_rooms: i32, doors: &[Door]) -> Door{
     while !check {
         door = generate_door(num_rooms);
         // check = check_valid_door(door, room, doors);
-        for n in 0..room.doors.len() -1 {
+        for n in 0..room.doors.len() - 1 {
             if door.direction == doors[room.doors[n]].direction {
                 check = false;
             }
@@ -759,7 +759,8 @@ fn gen_valid_door(room: &Room, num_rooms: i32, doors: &[Door]) -> Door{
     return door;
 }
 
-fn check_valid_door(door: Door, room: Room, doors: Vec<Door>) -> bool{ //room is current room
+fn check_valid_door(door: Door, room: Room, doors: Vec<Door>) -> bool {
+    //room is current room
     let mut check = true;
     for n in 0..room.doors.len() {
         if door.direction == doors[room.doors[n]].direction {
