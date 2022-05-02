@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use frenderer::animation::{AnimationSettings, AnimationState};
 use frenderer::assets::{AnimRef, MeshRef};
-use frenderer::camera::Camera;
+use frenderer::camera::{self, Camera};
 //use frenderer::image::Image;
 use frenderer::renderer::flat::SingleRenderState as FFlat;
 use frenderer::renderer::skinned::SingleRenderState as FSkinned;
@@ -185,7 +185,6 @@ impl frenderer::World for World {
         let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
-        let to_the_moon = Vec3::new(10000.0, 10000.0, 0.0);
 
         //working on the code to move the obj
         let move_front_back = input.key_axis(Key::S, Key::W) * 1.0 * DT as f32;
@@ -194,10 +193,6 @@ impl frenderer::World for World {
         //controls for gameplaystate mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
-                for obj in self.textured.iter_mut() {
-                    obj.move_by(to_the_moon);
-                }
-
                 //self.textured[0].trf.append_translation(to_the_moon);
                 self.state.gameplaystate = GameplayState::Play;
             }
@@ -282,17 +277,19 @@ impl frenderer::World for World {
         rs.set_camera(self.camera);
 
         //gameplaystate:: Mainscreen
+        //could do a match instead
         if self.state.gameplaystate == GameplayState::Mainscreen {
-            for (t_i, t) in self.main_screen_textured.iter_mut().enumerate() {
-                rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
-            }
+            rs.render_textured(
+                0,
+                self.main_screen_textured[0].model.clone(),
+                FTextured::new(self.main_screen_textured[0].trf),
+            );
         }
         //gameplaystate:: play
         else if self.state.gameplaystate == GameplayState::Play {
             //render the doors in the correct positions
             let door_list = &self.state.rooms[self.state.current_room].doors;
 
-            let mut tex_render_key = 0 as usize;
             //place doors
             if door_list.len() > 0 {
                 rs.render_textured(
@@ -422,41 +419,59 @@ fn main() -> Result<()> {
         Vec3::new(0., 0., 100.),
         Vec3::new(0., 0., 0.),
         Vec3::new(0., 1., 0.),
+        camera::Projection::Perspective { fov: PI / 2.0 },
     );
 
     //character model
-    let tex = engine.load_texture(std::path::Path::new("content/robot.png"))?;
-    let model = engine.load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
-    let char_model = engine.create_textured_model(model, vec![tex]);
+    let tex = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/robot.png"))?;
+    let model = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/characterSmall.fbx"))?;
+    let char_model = engine.assets().create_textured_model(model, vec![tex]);
 
     //door model
-    let door = engine.load_textured(std::path::Path::new("content/door.fbx"))?;
-    let door_model = engine.create_textured_model(door, vec![tex]);
+    let door = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/door.fbx"))?;
+    let door_model = engine.assets().create_textured_model(door, vec![tex]);
 
     // room model
-    let room = engine.load_textured(std::path::Path::new("content/room2.fbx"))?;
-    let room_model = engine.create_textured_model(room, vec![tex]);
+    let room = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/room2.fbx"))?;
+    let room_model = engine.assets().create_textured_model(room, vec![tex]);
 
     //text plane
-    let text_plane_test_tex =
-        engine.load_texture(std::path::Path::new("content/temp title texture.png"))?;
-    let text_plane_mesh = engine.load_textured(std::path::Path::new("content/text_plane.fbx"))?;
-    let text_plane_model = engine.create_textured_model(text_plane_mesh, vec![text_plane_test_tex]);
+    let text_plane_test_tex = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/temp title texture.png"))?;
+    let text_plane_mesh = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/text_plane.fbx"))?;
+    let text_plane_model = engine
+        .assets()
+        .create_textured_model(text_plane_mesh, vec![text_plane_test_tex]);
 
     //code for skinned model and gameObject
-    let sprite_meshes = engine.load_skinned(
+    let sprite_meshes = engine.assets().load_skinned(
         std::path::Path::new("content/characterSmall.fbx"),
         &["RootNode", "Root"],
     )?;
 
-    let sprite_animation = engine.load_anim(
+    let sprite_animation = engine.assets().load_anim(
         std::path::Path::new("content/run.fbx"),
         sprite_meshes[0],
         AnimationSettings { looping: true },
         "Root|Run",
     )?;
-    let sprite_texture = engine.load_texture(std::path::Path::new("content/robot.png"))?;
-    let sprite_model = engine.create_skinned_model(sprite_meshes, vec![sprite_texture]);
+    let sprite_texture = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/robot.png"))?;
+    let sprite_model = engine
+        .assets()
+        .create_skinned_model(sprite_meshes, vec![sprite_texture]);
 
     // sprite gameobject
     let sprite_obj = GameObject::new(
