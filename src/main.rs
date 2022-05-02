@@ -187,29 +187,21 @@ impl frenderer::World for World {
         //controls for gameplaystate mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
-                for obj in self.textured.iter_mut() {
-                    obj.trf.append_translation(to_the_moon);
-                }
+                // for obj in self.textured.iter_mut() {
+                //     obj.trf.append_translation(to_the_moon);
+                // }
                 self.state.gameplaystate = GameplayState::Play;
             }
         }
         //controls for gameplaystate play
         else if self.state.gameplaystate == GameplayState::Play {
             for obj in self.things.iter_mut() {
-                //obj.trf.append_rotation(rot);
-                obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
+                //obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
                 // dbg!(obj.trf.rotation);
                 obj.tick_animation();
             }
 
             for s in self.sprites.iter_mut() {
-                // s.trf.append_rotation(rot);
-                // s.size.x += dscale;
-                // s.size.y += dscale;
-
-                //move both the sprite and the caractee
-                //however also change the direction that the sprite is facing
-
                 //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
                 //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
                 //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
@@ -260,10 +252,10 @@ impl frenderer::World for World {
                 m.trf.append_rotation(rot);
                 m.trf.scale += dscale;
             }
-            for m in self.textured.iter_mut() {
-                m.trf.append_rotation(rot);
-                m.trf.scale += dscale;
-            }
+            // for m in self.textured.iter_mut() {
+            //     m.trf.append_rotation(rot);
+            //     m.trf.scale += dscale;
+            // }
             let camera_drot = input.key_axis(Key::Left, Key::Right) * PI / 4.0 * DT as f32;
             self.camera
                 .transform
@@ -289,9 +281,9 @@ impl frenderer::World for World {
             let door_list = &self.state.rooms[self.state.current_room].doors;
 
             //we still need to render the plane
-            for (t_i, t) in self.textured.iter_mut().enumerate() {
-                rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
-            }
+            // for (t_i, t) in self.textured.iter_mut().enumerate() {
+            //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
+            // }
 
             let mut tex_render_key = 0 as usize;
             //place doors
@@ -340,13 +332,13 @@ impl frenderer::World for World {
                 );
             }
 
-            // for (obj_i, obj) in self.things.iter_mut().enumerate() {
-            //     rs.render_skinned(
-            //         5 as usize,
-            //         obj.model.clone(),
-            //         FSkinned::new(obj.animation, obj.state, obj.trf),
-            //     );
-            // }
+            for (obj_i, obj) in self.things.iter_mut().enumerate() {
+                rs.render_skinned(
+                    5 as usize,
+                    obj.model.clone(),
+                    FSkinned::new(obj.animation, obj.state, obj.trf),
+                );
+            }
 
             //render room
             rs.render_textured(
@@ -448,15 +440,15 @@ fn main() -> Result<()> {
     let sprite_model = engine.create_skinned_model(sprite_meshes, vec![sprite_texture]);
 
     // sprite gameobject
-    let sprite_obj = GameObject::new(
+    let mut sprite_obj = GameObject::new(
         Similarity3::new(
-            Vec3::new(20.0, 5.0, -10.0),
+            Vec3::new(0.0, 0.0, 0.0),
             Rotor3::from_euler_angles(0.0, 0.0, PI as f32),
             0.05,
         ),
         sprite_model,
         sprite_animation,
-        AnimationState { t: 1.0 },
+        AnimationState { t: 0.0 },
         //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
         //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
         //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
@@ -496,7 +488,6 @@ fn main() -> Result<()> {
 
     let world = World {
         camera,
-        //game object isn't rendering :(
         things: vec![sprite_obj],
         sprites: vec![game_sprite],
         flats: vec![],
