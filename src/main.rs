@@ -55,6 +55,25 @@ impl GameObject {
     }
     fn tick_animation(&mut self) {
         self.state.tick(DT);
+        dbg!(self.state);
+    }
+
+    pub fn move_by(&mut self, vec: Vec3) {
+        self.trf.append_translation(vec);
+        //figure out append translation for the object
+        //self.model.append_translation(vec);
+    }
+
+    pub fn get_dir(&mut self) -> Direction {
+        if self.trf.rotation == Rotor3::from_euler_angles(0.0, 0.0, 0.0) {
+            return Direction::South;
+        } else if self.trf.rotation == Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) {
+            return Direction::West;
+        } else if self.trf.rotation == Rotor3::from_euler_angles(0.0, 0.0, PI as f32) {
+            return Direction::North;
+        } else {
+            return Direction::East;
+        }
     }
 }
 
@@ -115,12 +134,18 @@ struct Textured {
 }
 impl frenderer::World for World {
     fn update(&mut self, input: &frenderer::Input, _assets: &mut frenderer::assets::Assets) {
+        //currently WAS
+
         let yaw = input.key_axis(Key::Q, Key::W) * PI / 4.0 * DT as f32;
         let pitch = input.key_axis(Key::A, Key::S) * PI / 4.0 * DT as f32;
         let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
         let to_the_moon = Vec3::new(0.0, 100.0, 0.0);
+
+        //working on the code to move the obj
+        let move_front_back = input.key_axis(Key::S, Key::W) * 1.0 * DT as f32;
+        let move_left_right = input.key_axis(Key::A, Key::D) * 1.0 * DT as f32;
 
         //controls for gameplaystate mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
@@ -134,7 +159,7 @@ impl frenderer::World for World {
         //controls for gameplaystate play
         else if self.state.gameplaystate == GameplayState::Play {
             for obj in self.things.iter_mut() {
-                obj.trf.append_rotation(rot);
+                //obj.trf.append_rotation(rot);
                 obj.trf.scale = (obj.trf.scale + dscale).max(0.01);
                 // dbg!(obj.trf.rotation);
                 obj.tick_animation();
@@ -144,17 +169,44 @@ impl frenderer::World for World {
                 // s.trf.append_rotation(rot);
                 // s.size.x += dscale;
                 // s.size.y += dscale;
+
+                //move both the sprite and the caractee
+                //however also change the direction that the sprite is facing
+
+                //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
+                //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
+                //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
+                //Rotor3::from_euler_angles(0.0, 0.0, -PI/2.0 as f32), East
                 if input.is_key_down(Key::W) {
                     s.move_by(Vec3::new(0.0, 0.0, -SPEED));
+                    if self.things[0].get_dir() != Direction::North {
+                        self.things[0].trf.rotation =
+                            Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
+                    }
+                    self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
                 }
                 if input.is_key_down(Key::S) {
                     s.move_by(Vec3::new(0.0, 0.0, SPEED));
+                    if self.things[0].get_dir() != Direction::South {
+                        self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
+                    }
+                    self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
                 }
                 if input.is_key_down(Key::A) {
                     s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                    if self.things[0].get_dir() != Direction::West {
+                        self.things[0].trf.rotation =
+                            Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
+                    }
+                    self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
                 }
                 if input.is_key_down(Key::D) {
                     s.move_by(Vec3::new(SPEED, 0.0, 0.0));
+                    if self.things[0].get_dir() != Direction::East {
+                        self.things[0].trf.rotation =
+                            Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
+                    }
+                    self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
                 }
                 for door in self.state.rooms[self.state.current_room].doors.iter() {
                     if (s.check_collisions(*door)) {
@@ -268,17 +320,10 @@ impl frenderer::World for World {
                 );
             }
 
-            rs.render_textured(
-                8,
-                self.sprites[0].tex_model.model.clone(),
-                FTextured::new(self.sprites[0].tex_model.trf),
-            );
-
-            // //render the sprites
-            // for (s_i, s) in self.sprites.iter_mut().enumerate() {
-            //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-            //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
-            // }
+            //render the sprites
+            for (s_i, s) in self.sprites.iter_mut().enumerate() {
+                rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
+            }
 
             // for (m_i, m) in self.flats.iter_mut().enumerate() {
             //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
@@ -335,10 +380,10 @@ fn main() -> Result<()> {
     )?;
 
     let sprite_animation = engine.load_anim(
-        std::path::Path::new("content/kick.fbx"),
+        std::path::Path::new("content/run.fbx"),
         sprite_meshes[0],
         AnimationSettings { looping: true },
-        "Root|Kick",
+        "Root|Run",
     )?;
     let sprite_texture = engine.load_texture(std::path::Path::new("content/robot.png"))?;
     let sprite_model = engine.create_skinned_model(sprite_meshes, vec![sprite_texture]);
@@ -346,13 +391,17 @@ fn main() -> Result<()> {
     // sprite gameobject
     let sprite_obj = GameObject::new(
         Similarity3::new(
-            Vec3::new(0.0, 0.0, 0.0),
-            Rotor3::from_euler_angles(0.0, 0.0, 0.0),
-            1.0,
+            Vec3::new(20.0, 5.0, -10.0),
+            Rotor3::from_euler_angles(0.0, 0.0, PI as f32),
+            0.05,
         ),
         sprite_model,
         sprite_animation,
-        AnimationState { t: 0.0 },
+        AnimationState { t: 1.0 },
+        //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
+        //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
+        //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
+        //Rotor3::from_euler_angles(0.0, 0.0, -PI/2.0 as f32), West
     );
 
     let game_sprite = Sprite {
@@ -376,7 +425,7 @@ fn main() -> Result<()> {
         //inventory: vec![],
         rooms: rooms,
         is_finished: false,
-        gameplaystate: GameplayState::Mainscreen,
+        gameplaystate: GameplayState::Play,
     };
 
     let world = World {
