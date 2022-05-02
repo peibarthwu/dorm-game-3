@@ -19,7 +19,7 @@ const SCALE: f32 = 10.0;
 const BUFFER: f32 = 5.0;
 const DOOR_WIDTH: f32 = 0.177;
 const DOOR_DEPTH: f32 = 0.07;
-const NUM_ROOMS: i32 = 10;
+const NUM_ROOMS: i32 = 3;
 
 #[derive(Clone)]
 
@@ -495,45 +495,25 @@ fn main() -> Result<()> {
 
     // let rooms = generate_rooms(5);
     //THIS GENERATES THE ROOMS
-    let mut rooms = Vec::<Room>::new();
-    let mut doors = Vec::<Door>::new();
-    let mut n = 0;
-    //create n rooms
+    // let mut rooms = Vec::<Room>::new();
+    // let mut doors = Vec::<Door>::new();
+    // let mut n = 0;
 
-    // while n < NUM_ROOMS - 1 { //if we arent on the last room we can add a door
-    //     if rooms.len() == 0 {
-    //         let mut room = Room::new(vec![]); //create room with the first door
-    //         let door = gen_valid_door(&room, NUM_ROOMS, &doors);    //generate random door //NEED TO CHECK IF VALID DOOR
-    //         let back_door = create_bidirectional_door(door.clone(), n as usize); //generate door that points back at first door
-    //         doors.push(door); //add door to the list of doors
-    //         room.doors.push(n as usize); //add door to room
-    //         doors.push(back_door); //add door to the list of doors
-    //         let room2 = Room::new(vec![n as usize + 1]); //create next room
-    //         rooms.push(room);
-    //         rooms.push(room2);
-    //     } else {
-    //         let mut room = &mut rooms[n as usize]; //get last room
-    //         // add another door
-    //         let door = gen_valid_door(&room, NUM_ROOMS, &doors);    //generate random door //NEED TO CHECK IF VALID DOOR
-    //         room.doors.push(n as usize); //add door to room
-    //         let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
-    //         rooms[n as usize].doors.push(n as usize); //add door to room
-    //         let room2 = Room::new(vec![n as usize + 1]); //create next room
-    //         rooms.push(room2);
-    //     }
-    //     n += 1;
-    // }
+    //create n rooms
+    let (room_list, door_list) = generate_room_map(NUM_ROOMS as u32);
 
     let game_state = GameState {
         current_room: 0, //index of room in rooms
         max_rooms: 3,
         key_index: 2,
         //inventory: vec![],
-        rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
-        doors: vec![
-            Door::new(Direction::North, 1, Direction::South),
-            Door::new(Direction::South, 0, Direction::North),
-        ],
+        // rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
+        rooms: room_list,
+        doors: door_list,
+        // doors: vec![
+        //     Door::new(Direction::North, 1, Direction::South),
+        //     Door::new(Direction::South, 0, Direction::North),
+        // ],
         is_finished: false,
         gameplaystate: GameplayState::Mainscreen,
     };
@@ -627,50 +607,6 @@ fn get_trf(dir: Direction, room_size: f32, scale: f32) -> Similarity3 {
     }
 }
 
-// fn generate_rooms(num_rooms: u32) -> Vec<Room> {
-//     let mut vec = Vec::<Room>::new();
-//     let mut rng = rand::thread_rng();
-//     for n in 0..num_rooms {
-//         let doors = generate_doors(rng.gen_range(1..4), num_rooms);
-//         let room = Room::new(doors);
-//         vec.push(room);
-//     }
-//     return vec;
-// }
-
-// fn generate_doors(num_doors: u32, num_rooms: u32) -> Vec<Door> {
-//     let mut vec = Vec::<Door>::new();
-//     let mut dirs = Vec::<Direction>::new();
-//     let mut rng = rand::thread_rng();
-//     //generate directions
-//     //no two doors can be in the same direction
-//     let mut contains = false;
-//     let mut length = dirs.len();
-//     while length < num_doors as usize {
-//         let next_direction = get_dir(rng.gen_range(0..3));
-//         for direction in &*dirs {
-//             if next_direction == *direction {
-//                 contains = true;
-//             }
-//         }
-//         if !contains {
-//             dirs.push(next_direction);
-//             length += 1;
-//             dbg!(length);
-//         }
-//         contains = false;
-//     }
-//     for n in 0..num_doors {
-//         let mut target = rng.gen_range(0..num_rooms as usize);
-//         while target == n as usize {
-//             target = rng.gen_range(0..num_rooms as usize);
-//         }
-//         let door = Door::new(dirs[n as usize], target, get_spawn_dir(dirs[n as usize]));
-//         vec.push(door);
-//     }
-//     return vec;
-// }
-
 fn get_dir(num: u32) -> Direction {
     match num {
         0 => Direction::North,
@@ -706,52 +642,71 @@ fn get_spawn_pos(dir: Direction) -> Vec3 {
     return spawn_loca;
 }
 
-fn generate_room_map(num_rooms: u32, num_doors: u32) -> (Vec<Room>, Vec<Door>) {
+fn generate_room_map(num_rooms: u32) -> (Vec<Room>, Vec<Door>) {
     let mut rooms = Vec::<Room>::new();
     let mut doors = Vec::<Door>::new();
     let mut n = 0;
+    let mut num_doors = 0;
     //create n rooms
 
     while n < num_rooms - 1 {
         //if we arent on the last room we can add a door
         if rooms.len() == 0 {
             let mut room = Room::new(vec![]); //create room with the first door
-            let door = gen_valid_door(&room, num_rooms as i32, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
+            let door = gen_valid_door(&room, n as usize +1, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
+            
             doors.push(door); //add door to the list of doors
             room.doors.push(n as usize); //add door to room
             doors.push(back_door); //add door to the list of doors
             let room2 = Room::new(vec![n as usize + 1]); //create next room
+            dbg!(&doors);
             rooms.push(room);
             rooms.push(room2);
         } else {
-            let mut room = &mut rooms[n as usize]; //get last room
+            let room = &mut rooms[n as usize]; //get last room
                                                    // add another door
-            let door = gen_valid_door(&room, num_rooms as i32, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
+            let door = gen_valid_door(&room, n as usize + 1, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
+            doors.push(door); //add door to the list of doors
+            num_doors = doors.len() - 1;
+            room.doors.push(num_doors as usize); //add door to room
+
             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
-            rooms[n as usize].doors.push(n as usize); //add door to room
-            let room2 = Room::new(vec![n as usize + 1]); //create next room
+            doors.push(back_door); //add door to the list of doors
+            let room2 = Room::new(vec![num_doors as usize + 1]); //create next room
             rooms.push(room2);
         }
+        dbg!(&doors);
+        dbg!(&rooms);
         n += 1;
     }
     return (rooms, doors);
 }
 
-fn gen_valid_door(room: &Room, num_rooms: i32, doors: &[Door]) -> Door {
-    let mut door = generate_door(num_rooms);
-    // let mut check = check_valid_door(door, room, doors);
+fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
+    let mut door = generate_door(target);
+    // if this is the first door return door 
+    if room.doors.len() == 0 {
+        return door;
+    }
+    //else we need to make sure there are no repeats
     let mut check = true;
     for n in 0..room.doors.len() - 1 {
         if door.direction == doors[room.doors[n]].direction {
             check = false;
         }
+        if door.target == doors[room.doors[n]].target {
+            check = false;
+        }
     }
     while !check {
-        door = generate_door(num_rooms);
+        door = generate_door(target);
         // check = check_valid_door(door, room, doors);
         for n in 0..room.doors.len() - 1 {
             if door.direction == doors[room.doors[n]].direction {
+                check = false;
+            }
+            if door.target == doors[room.doors[n]].target {
                 check = false;
             }
         }
@@ -776,9 +731,8 @@ fn create_bidirectional_door(door: Door, cur_room: usize) -> Door {
 }
 
 //generate a door with random direction and target
-fn generate_door(num_rooms: i32) -> Door {
+fn generate_door(target: usize) -> Door {
     let mut rng = rand::thread_rng();
-    let direction = get_dir(rng.gen_range(0..3));
-    let target = rng.gen_range(0..num_rooms) as usize;
+    let direction = get_dir(rng.gen_range(0..4));
     return Door::new(direction, target, get_spawn_dir(direction));
 }
