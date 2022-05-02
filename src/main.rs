@@ -31,6 +31,7 @@ pub struct GameState {
     pub rooms: Vec<Room>,
     pub doors: Vec<Door>,
     pub is_finished: bool,
+    pub has_key: bool,
     pub gameplaystate: GameplayState,
 }
 
@@ -58,7 +59,7 @@ impl GameObject {
     }
     fn tick_animation(&mut self) {
         self.state.tick(DT);
-        dbg!(self.state);
+        //dbg!(self.state);
     }
 
     pub fn move_by(&mut self, vec: Vec3) {
@@ -86,18 +87,46 @@ struct Sprite {
     cel: Rect,
     size: Vec2,
     tex_model: Textured,
-    //figure out how to do this tex_model
-    //
-    // tex_model: Vec<MeshRef<frenderer::renderer::flat::Mesh>>,
-    // animation: AnimRef,
-    //model: Rc<Model>,
-    //sprite_object: GameObject,
 }
 impl Sprite {
     pub fn move_by(&mut self, vec: Vec3) {
         self.trf.append_translation(vec);
         self.tex_model.trf.append_translation(vec);
     }
+
+    //we will be checking collisions with the textured object
+    //either a chest or a key
+    pub fn check_item_collisions(&mut self, direction: Direction) -> bool {
+        //do sprite direction etc to get this inoe
+        //current size of teh block in the screen
+        let obj_edge_length = 7.75;
+
+        //this isn't the best LOL
+        //if we are going north the object size will be 0 0 7.75 on the south side
+        // 0 0 -7.75 on the north side
+        //and has to be between
+
+        if direction == Direction::North {
+            return self.trf.translation.x <= obj_edge_length
+                && self.trf.translation.x >= -obj_edge_length
+                && self.trf.translation.z <= obj_edge_length;
+        } else if direction == Direction::East {
+            return self.trf.translation.z <= obj_edge_length
+                && self.trf.translation.z >= -obj_edge_length
+                && self.trf.translation.x <= -obj_edge_length;
+        } else if direction == Direction::West {
+            return self.trf.translation.z <= obj_edge_length
+                && self.trf.translation.z >= -obj_edge_length
+                && self.trf.translation.x <= obj_edge_length;
+        }
+        //facing south
+        else {
+            return self.trf.translation.x <= obj_edge_length
+                && self.trf.translation.x >= -obj_edge_length
+                && self.trf.translation.x >= -obj_edge_length;
+        }
+    }
+
     pub fn check_collisions(&mut self, door: Door) -> bool {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
         if door.direction == Direction::North {
@@ -201,6 +230,7 @@ impl frenderer::World for World {
                 //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
                 //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
                 //Rotor3::from_euler_angles(0.0, 0.0, -PI/2.0 as f32), East
+
                 if input.is_key_down(Key::W) {
                     s.move_by(Vec3::new(0.0, 0.0, -SPEED));
                     if self.things[0].get_dir() != Direction::North {
@@ -243,11 +273,17 @@ impl frenderer::World for World {
                         dbg!({ "" }, s.tex_model.trf.translation);
                     }
                 }
+
+                //if there is a collision with the item in the center
+                if s.check_item_collisions(self.things[0].get_dir()) {
+                    self.state.has_key = true;
+                    //remove the item from the screen
+                }
             }
-            for m in self.flats.iter_mut() {
-                m.trf.append_rotation(rot);
-                m.trf.scale += dscale;
-            }
+            // for m in self.flats.iter_mut() {
+            //     m.trf.append_rotation(rot);
+            //     m.trf.scale += dscale;
+            // }
             // for m in self.textured.iter_mut() {
             //     m.trf.append_rotation(rot);
             //     m.trf.scale += dscale;
@@ -278,6 +314,15 @@ impl frenderer::World for World {
         else if self.state.gameplaystate == GameplayState::Play {
             //render the doors in the correct positions
             let door_list = &self.state.rooms[self.state.current_room].doors;
+
+            //render the key if the key index is the same
+            if self.state.key_index == 2 && !self.state.has_key {
+                rs.render_textured(
+                    9,
+                    self.textured[0].model.clone(),
+                    FTextured::new(self.textured[0].trf),
+                );
+            }
 
             //place doors
             if door_list.len() > 0 {
@@ -432,6 +477,16 @@ fn main() -> Result<()> {
         .load_textured(std::path::Path::new("content/room2.fbx"))?;
     let room_model = engine.assets().create_textured_model(room, vec![tex]);
 
+    let key_tex = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/gold metal .png"))?;
+    let key_mesh = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/block y.fbx"))?;
+    let key_model = engine
+        .assets()
+        .create_textured_model(key_mesh, vec![key_tex]);
+
     //text plane
     let text_plane_test_tex = engine
         .assets()
@@ -465,7 +520,7 @@ fn main() -> Result<()> {
     // sprite gameobject
     let sprite_obj = GameObject::new(
         Similarity3::new(
-            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(20.0, 0.0, 0.0),
             Rotor3::from_euler_angles(0.0, 0.0, PI as f32),
             0.05,
         ),
@@ -480,14 +535,14 @@ fn main() -> Result<()> {
 
     let game_sprite = Sprite {
         trf: Isometry3::new(
-            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(20.0, 0.0, 0.0),
             Rotor3::from_euler_angles(-PI / 2.0, -PI / 2.0, 0.0),
         ), //change to Rotor3::identity() to see the plane
         size: Vec2::new(16.0, 16.0),
         cel: Rect::new(0.5, 0.0, 0.5, 0.5),
         tex: tex,
         tex_model: Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 0.01),
+            trf: Similarity3::new(Vec3::new(20.0, 0.0, 0.0), Rotor3::identity(), 0.01),
             model: char_model.clone(),
             name: String::from("Sprite"),
         },
@@ -535,7 +590,8 @@ fn main() -> Result<()> {
             Door::new(Direction::South, 0, Direction::North),
         ],
         is_finished: false,
-        gameplaystate: GameplayState::Mainscreen,
+        has_key: false,
+        gameplaystate: GameplayState::Play,
     };
 
     let world = World {
@@ -549,7 +605,13 @@ fn main() -> Result<()> {
             model: text_plane_model.clone(),
             name: String::from("text plane"),
         }],
-        textured: vec![],
+
+        //key model
+        textured: vec![Textured {
+            trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 5.0),
+            model: key_model.clone(),
+            name: String::from("key model"),
+        }],
         door1: Textured {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
