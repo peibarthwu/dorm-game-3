@@ -96,11 +96,8 @@ impl Sprite {
 
     //we will be checking collisions with the textured object
     //either a chest or a key
-    pub fn check_item_collisions(&mut self, direction: Direction) -> bool {
-        //do sprite direction etc to get this inoe
-        //current size of teh block in the screen
-        let obj_edge_length = 7.75;
-
+    //shoudl probab
+    pub fn check_item_collisions(&mut self, direction: Direction, obj_edge_length: f32) -> bool {
         //this isn't the best LOL
         //if we are going north the object size will be 0 0 7.75 on the south side
         // 0 0 -7.75 on the north side
@@ -275,7 +272,7 @@ impl frenderer::World for World {
                 }
 
                 //if there is a collision with the item in the center
-                if s.check_item_collisions(self.things[0].get_dir()) {
+                if s.check_item_collisions(self.things[0].get_dir(), 7.75) {
                     self.state.has_key = true;
                     //remove the item from the screen
                 }
@@ -510,6 +507,7 @@ fn main() -> Result<()> {
         AnimationSettings { looping: true },
         "Root|Run",
     )?;
+
     let sprite_texture = engine
         .assets()
         .load_texture(std::path::Path::new("content/robot.png"))?;
@@ -527,10 +525,6 @@ fn main() -> Result<()> {
         sprite_model,
         sprite_animation,
         AnimationState { t: 0.0 },
-        //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
-        //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
-        //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
-        //Rotor3::from_euler_angles(0.0, 0.0, -PI/2.0 as f32), East
     );
 
     let game_sprite = Sprite {
@@ -715,9 +709,9 @@ fn generate_room_map(num_rooms: u32) -> (Vec<Room>, Vec<Door>) {
         //if we arent on the last room we can add a door
         if rooms.len() == 0 {
             let mut room = Room::new(vec![]); //create room with the first door
-            let door = gen_valid_door(&room, n as usize +1, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
+            let door = gen_valid_door(&room, n as usize + 1, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
-            
+
             doors.push(door); //add door to the list of doors
             room.doors.push(n as usize); //add door to room
             doors.push(back_door); //add door to the list of doors
@@ -727,7 +721,7 @@ fn generate_room_map(num_rooms: u32) -> (Vec<Room>, Vec<Door>) {
             rooms.push(room2);
         } else {
             let room = &mut rooms[n as usize]; //get last room
-                                                   // add another door
+                                               // add another door
             let door = gen_valid_door(&room, n as usize + 1, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
             doors.push(door); //add door to the list of doors
             num_doors = doors.len() - 1;
@@ -747,7 +741,7 @@ fn generate_room_map(num_rooms: u32) -> (Vec<Room>, Vec<Door>) {
 
 fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
     let mut door = generate_door(target);
-    // if this is the first door return door 
+    // if this is the first door return door
     if room.doors.len() == 0 {
         return door;
     }
