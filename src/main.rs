@@ -187,9 +187,11 @@ impl frenderer::World for World {
         //controls for gameplaystate mainscreen
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
-                // for obj in self.textured.iter_mut() {
-                //     obj.trf.append_translation(to_the_moon);
-                // }
+                for obj in self.textured.iter_mut() {
+                    obj.trf.translation += to_the_moon;
+                }
+
+                //self.textured[0].trf.append_translation(to_the_moon);
                 self.state.gameplaystate = GameplayState::Play;
             }
         }
@@ -243,6 +245,7 @@ impl frenderer::World for World {
                         self.state.current_room = door.target;
                         s.trf.translation = get_spawn_pos(door.direction);
                         s.tex_model.trf.translation = get_spawn_pos(door.direction);
+                        self.things[0].trf.translation = get_spawn_pos(door.direction);
                         dbg!({ "" }, self.state.current_room);
                         dbg!({ "" }, s.tex_model.trf.translation);
                     }
@@ -440,7 +443,7 @@ fn main() -> Result<()> {
     let sprite_model = engine.create_skinned_model(sprite_meshes, vec![sprite_texture]);
 
     // sprite gameobject
-    let mut sprite_obj = GameObject::new(
+    let sprite_obj = GameObject::new(
         Similarity3::new(
             Vec3::new(0.0, 0.0, 0.0),
             Rotor3::from_euler_angles(0.0, 0.0, PI as f32),
@@ -452,7 +455,7 @@ fn main() -> Result<()> {
         //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
         //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
         //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
-        //Rotor3::from_euler_angles(0.0, 0.0, -PI/2.0 as f32), West
+        //Rotor3::from_euler_angles(0.0, 0.0, -PI/2.0 as f32), East
     );
 
     let game_sprite = Sprite {
