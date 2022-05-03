@@ -20,6 +20,7 @@ const BUFFER: f32 = 5.0;
 const DOOR_WIDTH: f32 = 0.177;
 const DOOR_DEPTH: f32 = 0.07;
 const NUM_ROOMS: i32 = 4;
+const DIFFICULTY: usize = 3;
 
 #[derive(Clone)]
 
@@ -468,8 +469,10 @@ impl frenderer::World for World {
         }
         //restart the game by pressing S, and randomize
         else if self.state.gameplaystate == GameplayState::FinalScreen {
+            
             if input.is_key_down(Key::R) {
-                self.state = restart();
+                
+                self.state = restart(self.state.max_rooms);
             }
         }
     }
@@ -881,13 +884,14 @@ fn main() -> Result<()> {
 }
 
 //fix this so that max_rooms and key_index are randomized
-fn restart() -> GameState {
-    let (room_list, door_list) = generate_room_map(NUM_ROOMS as u32, 2);
-
+fn restart(curr_number_rooms: usize) -> GameState {
+    let (room_list, door_list) = generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);    
+    let mut rng = rand::thread_rng();
+    let keyidx = rng.gen_range(0..curr_number_rooms + DIFFICULTY);           
     return GameState {
         current_room: 0, //index of room in rooms
-        max_rooms: 4,
-        key_index: 1,
+        max_rooms: curr_number_rooms + DIFFICULTY,
+        key_index: keyidx,
         rooms: room_list,
         doors: door_list,
         is_finished: false,
