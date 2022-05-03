@@ -260,7 +260,6 @@ impl frenderer::World for World {
         }
         //controls for gameplaystate play
         else if self.state.gameplaystate == GameplayState::Play {
-            self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
                 dbg!(
@@ -273,6 +272,13 @@ impl frenderer::World for World {
                     )
                 );
                 //if we are not checking for chest collisions
+                if input.is_key_down(Key::W) ||
+                input.is_key_down(Key::A) ||
+                input.is_key_down(Key::S) ||
+                input.is_key_down(Key::D) {
+                    self.things[0].tick_animation();
+                }
+
                 if input.is_key_down(Key::W) {
                     s.move_by(Vec3::new(0.0, 0.0, -SPEED));
                     if self.things[0].get_dir() != Direction::North {
@@ -557,16 +563,23 @@ fn main() -> Result<()> {
     let char_model = engine.assets().create_textured_model(model, vec![tex]);
 
     //door model
+    let door_tex = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/floor.png"))?;
     let door = engine
         .assets()
         .load_textured(std::path::Path::new("content/door.fbx"))?;
-    let door_model = engine.assets().create_textured_model(door, vec![tex]);
+    let door_model = engine.assets().create_textured_model(door, vec![door_tex]);
+
 
     // room model
+    let room_tex = engine
+    .assets()
+    .load_texture(std::path::Path::new("content/tex2.png"))?;
     let room = engine
         .assets()
-        .load_textured(std::path::Path::new("content/room2.fbx"))?;
-    let room_model = engine.assets().create_textured_model(room, vec![tex]);
+        .load_textured(std::path::Path::new("content/room.fbx"))?;
+    let room_model = engine.assets().create_textured_model(room, vec![room_tex]);
 
     let key_tex = engine
         .assets()
