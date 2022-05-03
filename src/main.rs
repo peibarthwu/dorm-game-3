@@ -115,7 +115,7 @@ impl Sprite {
         } else if direction == Direction::East {
             return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
                 && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
-                && self.trf.translation.x <= object.trf.translation.x - obj_edge_length_x;
+                && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x;
         } else if direction == Direction::West {
             return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
                 && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
@@ -269,7 +269,9 @@ impl frenderer::World for World {
                         s.tex_model.trf.translation = get_spawn_pos(door.direction);
                         self.things[0].trf.translation = get_spawn_pos(door.direction);
                         dbg!({ "" }, self.state.current_room);
-                        dbg!({ "" }, s.tex_model.trf.translation);
+                        dbg!({ "" }, self.state.key_index);
+                        dbg!({ "" }, self.state.has_key);
+                        // dbg!({ "" }, s.tex_model.trf.translation);
                     }
                 }
 
@@ -279,9 +281,10 @@ impl frenderer::World for World {
                         self.things[0].get_dir(),
                         7.75,
                         3.0,
-                        &self.textured[1],
+                        &self.textured[0],
                     )
                 {
+                    //dbg!({ "" }, self.textured[0].trf.translation);
                     self.state.has_key = true;
                 }
 
@@ -708,8 +711,8 @@ fn restart() -> GameState {
 
     return GameState {
         current_room: 0, //index of room in rooms
-        max_rooms: 3,
-        key_index: 2,
+        max_rooms: 4,
+        key_index: 1,
         //inventory: vec![],
         // rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
         rooms: room_list,
@@ -803,7 +806,7 @@ fn generate_room_map(num_rooms: u32) -> (Vec<Room>, Vec<Door>) {
             room.doors.push(n as usize); //add door to room
             doors.push(back_door); //add door to the list of doors
             let room2 = Room::new(vec![n as usize + 1]); //create next room
-            dbg!(&doors);
+
             rooms.push(room);
             rooms.push(room2);
         } else {
@@ -819,8 +822,8 @@ fn generate_room_map(num_rooms: u32) -> (Vec<Room>, Vec<Door>) {
             let room2 = Room::new(vec![num_doors as usize + 1]); //create next room
             rooms.push(room2);
         }
-        dbg!(&doors);
-        dbg!(&rooms);
+        // dbg!(&doors);
+        // dbg!(&rooms);
         n += 1;
     }
     return (rooms, doors);
