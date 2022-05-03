@@ -12,14 +12,14 @@ use scene3d::types::*;
 use std::rc::Rc;
 
 const DT: f64 = 1.0 / 60.0;
-const SPEED: f32 = 0.25;
+const SPEED: f32 = 0.5;
 const ROOMSIZE: f32 = 60.0;
 const COLLISION_RADIUS: f32 = 1.0;
 const SCALE: f32 = 10.0;
 const BUFFER: f32 = 5.0;
 const DOOR_WIDTH: f32 = 0.177;
 const DOOR_DEPTH: f32 = 0.07;
-const NUM_ROOMS: i32 = 3;
+const NUM_ROOMS: i32 = 4;
 
 #[derive(Clone)]
 
@@ -216,7 +216,7 @@ impl frenderer::World for World {
         let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
         let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
 
-        //controls for gameplaystate mainscreen
+        //Press S to play
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
                 //self.textured[0].trf.append_translation(to_the_moon);
@@ -228,10 +228,7 @@ impl frenderer::World for World {
             self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
-                //Rotor3::from_euler_angles(0.0, 0.0, 0.0), this is south
-                //Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32) this is west
-                //Rotor3::from_euler_angles(0.0, 0.0, PI as f32), North
-                //Rotor3::from_euler_angles(0.0, 0.0, -PI/2.0 as f32), East
+                //to think about: collisions with chest in first room
 
                 if input.is_key_down(Key::W) {
                     s.move_by(Vec3::new(0.0, 0.0, -SPEED));
@@ -277,8 +274,31 @@ impl frenderer::World for World {
                 }
 
                 //checking collision with key
-                if s.check_item_collisions(self.things[0].get_dir(), 7.75, 3.0, &self.textured[0]) {
+                if self.state.current_room == self.state.key_index
+                    && s.check_item_collisions(
+                        self.things[0].get_dir(),
+                        7.75,
+                        3.0,
+                        &self.textured[1],
+                    )
+                {
                     self.state.has_key = true;
+                }
+
+                //if we have the key, are in first room, and are collided with the chest
+                //we are finished with the game
+                //something is wrong with the code right here
+                if self.state.current_room == 0
+                    && self.state.has_key
+                    && s.check_item_collisions(
+                        self.things[0].get_dir(),
+                        7.75,
+                        7.75,
+                        &self.textured[0],
+                    )
+                {
+                    self.state.is_finished = true;
+                    self.state.gameplaystate = GameplayState::FinalScreen;
                 }
             }
             // for m in self.flats.iter_mut() {
@@ -293,6 +313,12 @@ impl frenderer::World for World {
             self.camera
                 .transform
                 .prepend_rotation(Rotor3::from_rotation_xz(camera_drot));
+        }
+        //restart the game by pressing S, and randomize
+        else if self.state.gameplaystate == GameplayState::FinalScreen {
+            if input.is_key_down(Key::S) {
+                self.state = restart();
+            }
         }
     }
     fn render(
@@ -316,23 +342,23 @@ impl frenderer::World for World {
             //render the doors in the correct positions
             let door_list = &self.state.rooms[self.state.current_room].doors;
 
-            //render the key if the key index is the same
-            //it should be self.state.key_index == self.state.current_room when we run it
-            // == 2 for testing reasons
-            if self.state.key_index == 2 && !self.state.has_key {
+            //render the key if we are in the right room and if we don't have the key
+            if self.state.key_index == self.state.current_room && !self.state.has_key {
                 //render the key
                 rs.render_textured(
                     10,
                     self.textured[1].model.clone(),
                     FTextured::new(self.textured[1].trf),
                 );
-
+            }
+            //render the chest in the starting room
+            else if self.state.current_room == 0 {
                 //render the block
-                // rs.render_textured(
-                //     9,
-                //     self.textured[0].model.clone(),
-                //     FTextured::new(self.textured[0].trf),
-                // );
+                rs.render_textured(
+                    9,
+                    self.textured[0].model.clone(),
+                    FTextured::new(self.textured[0].trf),
+                );
             }
 
             //place doors
@@ -381,7 +407,7 @@ impl frenderer::World for World {
                 );
             }
 
-            //rendering the game object
+            //render the game object
             rs.render_skinned(
                 5 as usize,
                 self.things[0].model.clone(),
@@ -413,7 +439,7 @@ impl frenderer::World for World {
                 )),
             );
 
-            // //render the sprites
+            // render the sprites
             rs.render_textured(
                 8,
                 self.sprites[0].tex_model.model.clone(),
@@ -443,6 +469,14 @@ impl frenderer::World for World {
             // for (t_i, t) in self.textured.iter_mut().enumerate() {
             //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
             // }
+        }
+        //final screen
+        else if self.state.gameplaystate == GameplayState::FinalScreen {
+            rs.render_textured(
+                0,
+                self.main_screen_textured[0].model.clone(),
+                FTextured::new(self.main_screen_textured[0].trf),
+            );
         }
     }
 }
@@ -577,8 +611,8 @@ fn main() -> Result<()> {
 
     let game_state = GameState {
         current_room: 0, //index of room in rooms
-        max_rooms: 3,
-        key_index: 2,
+        max_rooms: 4,
+        key_index: 1,
         //inventory: vec![],
         // rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
         rooms: room_list,
@@ -666,6 +700,28 @@ fn main() -> Result<()> {
         state: game_state,
     };
     engine.play(world)
+}
+
+//fix this so that max_rooms and key_index are randomized
+fn restart() -> GameState {
+    let (room_list, door_list) = generate_room_map(NUM_ROOMS as u32);
+
+    return GameState {
+        current_room: 0, //index of room in rooms
+        max_rooms: 3,
+        key_index: 2,
+        //inventory: vec![],
+        // rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
+        rooms: room_list,
+        doors: door_list,
+        // doors: vec![
+        //     Door::new(Direction::North, 1, Direction::South),
+        //     Door::new(Direction::South, 0, Direction::North),
+        // ],
+        is_finished: false,
+        has_key: false,
+        gameplaystate: GameplayState::Play,
+    };
 }
 
 fn get_trf(dir: Direction, room_size: f32, scale: f32) -> Similarity3 {
