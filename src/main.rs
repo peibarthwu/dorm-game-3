@@ -27,8 +27,6 @@ const NUM_ROOMS: i32 = 4;
 const DIFFICULTY: usize = 3;
 const NUM_WALLPAPERS: usize = 4;
 
-
-
 #[derive(Clone)]
 
 pub struct GameState {
@@ -42,7 +40,7 @@ pub struct GameState {
     pub gameplaystate: GameplayState,
     pub audio_play: bool,
     pub has_rotated: bool,
-    pub wallpapers: Vec<std::rc::Rc<frenderer::renderer::textured::Model>>
+    pub wallpapers: Vec<std::rc::Rc<frenderer::renderer::textured::Model>>,
 }
 
 #[derive(Clone)]
@@ -247,7 +245,7 @@ impl frenderer::World for World {
                     && self.state.current_room == 0
                 {
                     // check if collide with item and spawn back
-                    dbg!(self.things[0].get_dir());
+                    // dbg!(self.things[0].get_dir());
                     if self.things[0].get_dir() == Direction::North {
                         s.trf.translation += Vec3::new(0.0, 0.0, BUFFER / 2.0);
                         s.tex_model.trf.translation += Vec3::new(0.0, 0.0, BUFFER / 2.0);
@@ -313,7 +311,7 @@ impl frenderer::World for World {
                         s.trf.translation = get_spawn_pos(door.direction);
                         s.tex_model.trf.translation = get_spawn_pos(door.direction);
                         self.things[0].trf.translation = get_spawn_pos(door.direction);
-                        dbg!(self.state.current_room);
+                        // dbg!(self.state.current_room);
                     }
                 }
 
@@ -551,42 +549,58 @@ fn main() -> Result<()> {
     let room = engine
         .assets()
         .load_textured(std::path::Path::new("content/room.fbx"))?;
-    let room_model = engine.assets().create_textured_model(room.clone(), vec![room_tex]);
+    let room_model = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex]);
 
     let room_tex1 = engine
         .assets()
         .load_texture(std::path::Path::new("content/tex3.png"))?;
-    let room_model1 = engine.assets().create_textured_model(room.clone(), vec![room_tex1]);
+    let room_model1 = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex1]);
 
     let room_tex2 = engine
         .assets()
         .load_texture(std::path::Path::new("content/tex4.png"))?;
-    let room_model2 = engine.assets().create_textured_model(room.clone(), vec![room_tex2]);
+    let room_model2 = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex2]);
 
     let room_tex3 = engine
         .assets()
         .load_texture(std::path::Path::new("content/tex5.png"))?;
-    let room_model3 = engine.assets().create_textured_model(room.clone(), vec![room_tex3]);
+    let room_model3 = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex3]);
 
     let room_tex4 = engine
         .assets()
         .load_texture(std::path::Path::new("content/tex6.png"))?;
-    let room_model4 = engine.assets().create_textured_model(room.clone(), vec![room_tex4]);
+    let room_model4 = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex4]);
 
     let room_tex5 = engine
         .assets()
         .load_texture(std::path::Path::new("content/tex7.png"))?;
-    let room_model5 = engine.assets().create_textured_model(room.clone(), vec![room_tex5]);
+    let room_model5 = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex5]);
 
     let room_tex6 = engine
         .assets()
         .load_texture(std::path::Path::new("content/tex8.png"))?;
-    let room_model6 = engine.assets().create_textured_model(room.clone(), vec![room_tex6]);
+    let room_model6 = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex6]);
 
     let room_tex7 = engine
-    .assets()
-    .load_texture(std::path::Path::new("content/tex9.png"))?;
-    let room_model7 = engine.assets().create_textured_model(room.clone(), vec![room_tex7]);
+        .assets()
+        .load_texture(std::path::Path::new("content/tex9.png"))?;
+    let room_model7 = engine
+        .assets()
+        .create_textured_model(room.clone(), vec![room_tex7]);
 
     let key_tex = engine
         .assets()
@@ -673,7 +687,7 @@ fn main() -> Result<()> {
 
     let sprite_texture = engine
         .assets()
-        .load_texture(std::path::Path::new("content/robot.png"))?;
+        .load_texture(std::path::Path::new("content/robot2.png"))?;
     let sprite_model = engine
         .assets()
         .create_skinned_model(sprite_meshes, vec![sprite_texture]);
@@ -712,7 +726,7 @@ fn main() -> Result<()> {
     let game_state = GameState {
         current_room: 0, //index of room in rooms
         max_rooms: 4,
-        key_index: 1,
+        key_index: 3,
         //inventory: vec![],
         // rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
         rooms: room_list,
@@ -726,8 +740,16 @@ fn main() -> Result<()> {
         gameplaystate: GameplayState::Mainscreen,
         audio_play: true,
         has_rotated: false,
-        wallpapers: vec![room_model.clone(), room_model1.clone(), room_model2.clone(), room_model3.clone(),
-        room_model4.clone(), room_model5.clone(), room_model6.clone(), room_model7.clone()],
+        wallpapers: vec![
+            room_model.clone(),
+            room_model1.clone(),
+            room_model2.clone(),
+            room_model3.clone(),
+            room_model4.clone(),
+            room_model5.clone(),
+            room_model6.clone(),
+            room_model7.clone(),
+        ],
     };
 
     let world = World {
@@ -818,12 +840,18 @@ fn main() -> Result<()> {
 }
 
 //fix this so that max_rooms and key_index are randomized
-fn restart(curr_number_rooms: usize, wallpapers: &std::vec::Vec<std::rc::Rc<frenderer::renderer::textured::Model>>) -> GameState {
-    let (room_list, door_list) =
-        generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY, wallpapers.len());
+fn restart(
+    curr_number_rooms: usize,
+    wallpapers: &std::vec::Vec<std::rc::Rc<frenderer::renderer::textured::Model>>,
+) -> GameState {
+    let (room_list, door_list) = generate_room_map(
+        (curr_number_rooms + DIFFICULTY) as u32,
+        DIFFICULTY,
+        wallpapers.len(),
+    );
     let mut rng = rand::thread_rng();
     let keyidx = rng.gen_range(1..curr_number_rooms + DIFFICULTY);
-    dbg!({ "key loca: " }, keyidx);
+    // dbg!({ "key loca: " }, keyidx);
     return GameState {
         current_room: 0, //index of room in rooms
         max_rooms: curr_number_rooms + DIFFICULTY,
@@ -900,7 +928,11 @@ fn get_spawn_pos(dir: Direction) -> Vec3 {
     return spawn_loca;
 }
 
-fn generate_room_map(num_rooms: u32, num_dead_ends: usize, num_tex: usize) -> (Vec<Room>, Vec<Door>) {
+fn generate_room_map(
+    num_rooms: u32,
+    num_dead_ends: usize,
+    num_tex: usize,
+) -> (Vec<Room>, Vec<Door>) {
     let mut rooms = Vec::<Room>::new();
     let mut doors = Vec::<Door>::new();
     let mut n = 0;
@@ -911,14 +943,14 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize, num_tex: usize) -> (V
     while n < num_rooms - 1 {
         //if we arent on the last room we can add a door
         if rooms.len() == 0 {
-            let mut room = Room::new(vec![],  rng.gen_range(0..num_tex)); //create room with the first door
+            let mut room = Room::new(vec![], rng.gen_range(0..num_tex)); //create room with the first door
             let door = gen_valid_door(&room, n as usize + 1, &doors); //generate random door //NEED TO CHECK IF VALID DOOR
             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
 
             doors.push(door); //add door to the list of doors
             room.doors.push(n as usize); //add door to room
             doors.push(back_door); //add door to the list of doors
-            let room2 = Room::new(vec![n as usize + 1],  rng.gen_range(0..num_tex)); //create next room
+            let room2 = Room::new(vec![n as usize + 1], rng.gen_range(0..num_tex)); //create next room
 
             rooms.push(room);
             rooms.push(room2);
@@ -932,11 +964,11 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize, num_tex: usize) -> (V
 
             let back_door = create_bidirectional_door(door, n as usize); //generate door that points back at first door
             doors.push(back_door); //add door to the list of doors
-            let room2 = Room::new(vec![num_doors as usize + 1], rng.gen_range(0..num_tex) ); //create next room
+            let room2 = Room::new(vec![num_doors as usize + 1], rng.gen_range(0..num_tex)); //create next room
             rooms.push(room2);
         }
         n += 1;
-        dbg!({ "while 1" });
+        // dbg!({ "while 1" });
     }
 
     //generate dead ends
@@ -954,10 +986,10 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize, num_tex: usize) -> (V
         rooms.push(dest_room);
 
         curr_dead_ends += 1;
-        dbg!({ "while 2" });
+        // dbg!({ "while 2" });
     }
-    dbg!(&doors);
-    dbg!(&rooms);
+    // dbg!(&doors);
+    // dbg!(&rooms);
     return (rooms, doors);
 }
 
@@ -992,7 +1024,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
                 check2 = true;
             }
         }
-        dbg!({ "while 3" });
+        // dbg!({ "while 3" });
     }
     return door;
 }
