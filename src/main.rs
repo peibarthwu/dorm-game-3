@@ -606,7 +606,7 @@ fn main() -> Result<()> {
 
     let mut audio_manager = AudioManager::new(AudioManagerSettings::default()).unwrap();
     let ghost_choir = audio_manager
-        .load_sound("content/ghost-choir.ogg", SoundSettings::default())
+        .load_sound("content/ghost-choir looped.ogg", SoundSettings::default())
         .unwrap();
 
     //code for skinned model and gameObject
