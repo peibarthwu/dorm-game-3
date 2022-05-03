@@ -18,3 +18,4 @@ color-eyre = {version="0.5"}
 string-interner = "0.14.0"
 frenderer = "0.5.8"
 thunderdome="0.5.0"
+kira = "0.5.3"
