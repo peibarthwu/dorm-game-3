@@ -492,13 +492,7 @@ fn main() -> Result<()> {
             name: String::from("Sprite"),
         },
     };
-
-    // let rooms = generate_rooms(5);
-    //THIS GENERATES THE ROOMS
-    // let mut rooms = Vec::<Room>::new();
-    // let mut doors = Vec::<Door>::new();
-    // let mut n = 0;
-
+    
     //create n rooms
     let (room_list, door_list) = generate_room_map(NUM_ROOMS as u32);
 
