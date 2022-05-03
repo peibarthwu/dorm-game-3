@@ -64,8 +64,10 @@ impl GameObject {
     }
 
     pub fn move_by(&mut self, vec: Vec3) {
-        if self.trf.translation.x + vec.x < ROOMSIZE/2.0 && self.trf.translation.x + vec.x > -ROOMSIZE/2.0
-        && self.trf.translation.z + vec.z < ROOMSIZE/2.0 && self.trf.translation.z + vec.z > -ROOMSIZE/2.0
+        if self.trf.translation.x + vec.x < ROOMSIZE / 2.0
+            && self.trf.translation.x + vec.x > -ROOMSIZE / 2.0
+            && self.trf.translation.z + vec.z < ROOMSIZE / 2.0
+            && self.trf.translation.z + vec.z > -ROOMSIZE / 2.0
         {
             self.trf.append_translation(vec);
         }
@@ -133,33 +135,37 @@ impl Sprite {
         else {
             return self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x
                 && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
-                && self.trf.translation.x >= object.trf.translation.z - obj_edge_length_z
-                && self.trf.translation.x <= object.trf.translation.z + obj_edge_length_z;
+                && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
+                && self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z;
         }
     }
 
     pub fn check_collisions(&mut self, door: Door) -> bool {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
         if door.direction == Direction::North {
-            return self.trf.translation.z + BUFFER/2.0 >= door_worldspace.translation.z - DOOR_DEPTH * SCALE
+            return self.trf.translation.z + BUFFER / 2.0
+                >= door_worldspace.translation.z - DOOR_DEPTH * SCALE
                 && self.trf.translation.x
                     <= door_worldspace.translation.x + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.x
                     >= door_worldspace.translation.x - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::South {
-            return self.trf.translation.z - BUFFER/2.0 <= door_worldspace.translation.z + DOOR_DEPTH * SCALE
+            return self.trf.translation.z - BUFFER / 2.0
+                <= door_worldspace.translation.z + DOOR_DEPTH * SCALE
                 && self.trf.translation.x
                     <= door_worldspace.translation.x + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.x
                     >= door_worldspace.translation.x - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::East {
-            return self.trf.translation.x + BUFFER/2.0 >= door_worldspace.translation.x - DOOR_DEPTH * SCALE
+            return self.trf.translation.x + BUFFER / 2.0
+                >= door_worldspace.translation.x - DOOR_DEPTH * SCALE
                 && self.trf.translation.z
                     <= door_worldspace.translation.z + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.z
                     >= door_worldspace.translation.z - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::West {
-            return self.trf.translation.x - BUFFER/2.0 <= door_worldspace.translation.x + DOOR_DEPTH * SCALE
+            return self.trf.translation.x - BUFFER / 2.0
+                <= door_worldspace.translation.x + DOOR_DEPTH * SCALE
                 && self.trf.translation.z
                     <= door_worldspace.translation.z + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.z
@@ -228,6 +234,14 @@ impl frenderer::World for World {
         //Press S to play
         if self.state.gameplaystate == GameplayState::Mainscreen {
             if input.is_key_down(Key::S) {
+                //self.textured[0].trf.append_translation(to_the_moon);
+                self.state.gameplaystate = GameplayState::Instructions;
+            }
+        }
+
+        //Press P to play
+        if self.state.gameplaystate == GameplayState::Instructions {
+            if input.is_key_down(Key::P) {
                 //self.textured[0].trf.append_translation(to_the_moon);
                 self.state.gameplaystate = GameplayState::Play;
             }
@@ -491,6 +505,12 @@ impl frenderer::World for World {
                 self.main_screen_textured[0].model.clone(),
                 FTextured::new(self.main_screen_textured[0].trf),
             );
+        } else if self.state.gameplaystate == GameplayState::Instructions {
+            rs.render_textured(
+                1,
+                self.main_screen_textured[1].model.clone(),
+                FTextured::new(self.main_screen_textured[1].trf),
+            );
         }
         //gameplaystate:: play
         else if self.state.gameplaystate == GameplayState::Play {
@@ -624,9 +644,7 @@ impl frenderer::World for World {
             // for (t_i, t) in self.textured.iter_mut().enumerate() {
             //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
             // }
-        }
-        //final screen
-        else if self.state.gameplaystate == GameplayState::FinalScreen {
+        } else if self.state.gameplaystate == GameplayState::FinalScreen {
             self.camera = Camera::look_at(
                 Vec3::new(0., 40.0, 100.),
                 Vec3::new(0., 40.0, 0.),
@@ -635,9 +653,9 @@ impl frenderer::World for World {
             );
 
             rs.render_textured(
-                0,
-                self.main_screen_textured[0].model.clone(),
-                FTextured::new(self.main_screen_textured[0].trf),
+                3,
+                self.main_screen_textured[2].model.clone(),
+                FTextured::new(self.main_screen_textured[2].trf),
             );
         }
     }
@@ -715,15 +733,42 @@ fn main() -> Result<()> {
     //     .create_textured_model(chest_mesh, vec![chest_tex, chest_tex]);
 
     //text plane
-    let text_plane_test_tex = engine
+    //text plane
+    let text_plane_main = engine
         .assets()
-        .load_texture(std::path::Path::new("content/temp title texture.png"))?;
-    let text_plane_mesh = engine
+        .load_texture(std::path::Path::new("content/main screen tex.png"))?;
+
+    let text_plane_main_screen_mesh = engine
         .assets()
         .load_textured(std::path::Path::new("content/text_plane.fbx"))?;
-    let text_plane_model = engine
+
+    let text_plane_main_screen_model = engine
         .assets()
-        .create_textured_model(text_plane_mesh, vec![text_plane_test_tex]);
+        .create_textured_model(text_plane_main_screen_mesh, vec![text_plane_main]);
+
+    let text_plane_instructions_mesh = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/text_plane.fbx"))?;
+
+    let text_plane_instructions = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/instructions tex.png"))?;
+
+    let text_plane_instructions_model = engine
+        .assets()
+        .create_textured_model(text_plane_instructions_mesh, vec![text_plane_instructions]);
+
+    let text_plane_final_mesh = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/text_plane.fbx"))?;
+
+    let text_plane_final = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/final tex.png"))?;
+
+    let text_plane_final_model = engine
+        .assets()
+        .create_textured_model(text_plane_final_mesh, vec![text_plane_final]);
 
     //code for skinned model and gameObject
     let sprite_meshes = engine.assets().load_skinned(
@@ -781,7 +826,7 @@ fn main() -> Result<()> {
             name: String::from("Sprite"),
         },
     };
-    
+
     //create n rooms
     let (room_list, door_list) = generate_room_map(NUM_ROOMS as u32, 2);
 
@@ -808,11 +853,23 @@ fn main() -> Result<()> {
         sprites: vec![game_sprite],
         flats: vec![],
         //textured: vec![],
-        main_screen_textured: vec![Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
-            model: text_plane_model.clone(),
-            name: String::from("text plane"),
-        }],
+        main_screen_textured: vec![
+            Textured {
+                trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
+                model: text_plane_main_screen_model.clone(),
+                name: String::from("main screen text plane"),
+            },
+            Textured {
+                trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
+                model: text_plane_instructions_model.clone(),
+                name: String::from("instructions text plane"),
+            },
+            Textured {
+                trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
+                model: text_plane_final_model.clone(),
+                name: String::from("final text plane"),
+            },
+        ],
 
         //key model
         textured: vec![
@@ -1000,16 +1057,16 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
     }
 
     while curr_dead_ends < num_dead_ends {
-        let roomidx = rng.gen_range(0..rooms.len()-1);
+        let roomidx = rng.gen_range(0..rooms.len() - 1);
         let srcroom = &mut rooms[roomidx]; //get room index
-        //gen new door
+                                           //gen new door
         let door = gen_valid_door(srcroom, num_rooms as usize + curr_dead_ends, &doors);
         doors.push(door);
-        srcroom.doors.push(doors.len()-1);
+        srcroom.doors.push(doors.len() - 1);
         //make room that points back to that door
-        let back_door = create_bidirectional_door(door, roomidx); 
+        let back_door = create_bidirectional_door(door, roomidx);
         doors.push(back_door);
-        let dest_room = Room::new(vec![doors.len()-1]); //create next room
+        let dest_room = Room::new(vec![doors.len() - 1]); //create next room
         rooms.push(dest_room);
 
         curr_dead_ends += 1;
@@ -1027,7 +1084,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
     }
     //else we need to make sure there are no repeats
     let mut check = true; //unique direction
-    let mut check2 = true;  //unique target
+    let mut check2 = true; //unique target
     for n in 0..room.doors.len() - 1 {
         if door.direction == doors[room.doors[n]].direction {
             check = false;
@@ -1041,14 +1098,12 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
         for n in 0..room.doors.len() - 1 {
             if door.direction == doors[room.doors[n]].direction {
                 check = false;
-            }
-            else {
+            } else {
                 check = true;
             }
             if door.target == doors[room.doors[n]].target {
                 check2 = false;
-            }
-            else{
+            } else {
                 check2 = true;
             }
         }
