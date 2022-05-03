@@ -263,6 +263,15 @@ impl frenderer::World for World {
             self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
+                dbg!(
+                    { "" },
+                    s.check_item_collisions(
+                        self.things[0].get_dir(),
+                        7.75,
+                        7.75,
+                        &self.textured[0],
+                    )
+                );
                 //if we are not checking for chest collisions
                 if input.is_key_down(Key::W) {
                     s.move_by(Vec3::new(0.0, 0.0, -SPEED));
@@ -312,7 +321,7 @@ impl frenderer::World for World {
                         self.things[0].get_dir(),
                         7.75,
                         3.0,
-                        &self.textured[0],
+                        &self.textured[1],
                     )
                 {
                     //dbg!({ "" }, self.textured[0].trf.translation);
@@ -341,9 +350,7 @@ impl frenderer::World for World {
         }
         //restart the game by pressing S, and randomize
         else if self.state.gameplaystate == GameplayState::FinalScreen {
-            
             if input.is_key_down(Key::R) {
-                
                 self.state = restart(self.state.max_rooms);
             }
         }
@@ -807,9 +814,10 @@ fn main() -> Result<()> {
 
 //fix this so that max_rooms and key_index are randomized
 fn restart(curr_number_rooms: usize) -> GameState {
-    let (room_list, door_list) = generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);    
+    let (room_list, door_list) =
+        generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);
     let mut rng = rand::thread_rng();
-    let keyidx = rng.gen_range(0..curr_number_rooms + DIFFICULTY);           
+    let keyidx = rng.gen_range(0..curr_number_rooms + DIFFICULTY);
     return GameState {
         current_room: 0, //index of room in rooms
         max_rooms: curr_number_rooms + DIFFICULTY,
@@ -819,7 +827,7 @@ fn restart(curr_number_rooms: usize) -> GameState {
         is_finished: false,
         has_key: false,
         gameplaystate: GameplayState::Play,
-        audio_play: true,
+        audio_play: false,
     };
 }
 
