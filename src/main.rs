@@ -210,11 +210,11 @@ impl frenderer::World for World {
     fn update(&mut self, input: &frenderer::Input, _assets: &mut frenderer::assets::Assets) {
         //currently WAS
 
-        let yaw = input.key_axis(Key::Q, Key::W) * PI / 4.0 * DT as f32;
-        let pitch = input.key_axis(Key::A, Key::S) * PI / 4.0 * DT as f32;
-        let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
-        let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
-        let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
+        // let yaw = input.key_axis(Key::Q, Key::W) * PI / 4.0 * DT as f32;
+        // let pitch = input.key_axis(Key::A, Key::S) * PI / 4.0 * DT as f32;
+        // let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
+        // let dscale = input.key_axis(Key::E, Key::R) * 1.0 * DT as f32;
+        // let rot = Rotor3::from_euler_angles(roll, pitch, yaw);
 
         //Press S to play
         if self.state.gameplaystate == GameplayState::Mainscreen {
@@ -230,37 +230,44 @@ impl frenderer::World for World {
             for s in self.sprites.iter_mut() {
                 //to think about: collisions with chest in first room
 
-                if input.is_key_down(Key::W) {
-                    s.move_by(Vec3::new(0.0, 0.0, -SPEED));
-                    if self.things[0].get_dir() != Direction::North {
-                        self.things[0].trf.rotation =
-                            Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
-                    }
-                    self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
+                //if we are in the first room
+                if self.state.current_room == 0 {
                 }
-                if input.is_key_down(Key::S) {
-                    s.move_by(Vec3::new(0.0, 0.0, SPEED));
-                    if self.things[0].get_dir() != Direction::South {
-                        self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
+                //if we are in any other room
+                else {
+                    if input.is_key_down(Key::W) {
+                        s.move_by(Vec3::new(0.0, 0.0, -SPEED));
+                        if self.things[0].get_dir() != Direction::North {
+                            self.things[0].trf.rotation =
+                                Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
+                        }
+                        self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
                     }
-                    self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
-                }
-                if input.is_key_down(Key::A) {
-                    s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                    if self.things[0].get_dir() != Direction::West {
-                        self.things[0].trf.rotation =
-                            Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
+                    if input.is_key_down(Key::S) {
+                        s.move_by(Vec3::new(0.0, 0.0, SPEED));
+                        if self.things[0].get_dir() != Direction::South {
+                            self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
+                        }
+                        self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
                     }
-                    self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                }
-                if input.is_key_down(Key::D) {
-                    s.move_by(Vec3::new(SPEED, 0.0, 0.0));
-                    if self.things[0].get_dir() != Direction::East {
-                        self.things[0].trf.rotation =
-                            Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
+                    if input.is_key_down(Key::A) {
+                        s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                        if self.things[0].get_dir() != Direction::West {
+                            self.things[0].trf.rotation =
+                                Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
+                        }
+                        self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
                     }
-                    self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
+                    if input.is_key_down(Key::D) {
+                        s.move_by(Vec3::new(SPEED, 0.0, 0.0));
+                        if self.things[0].get_dir() != Direction::East {
+                            self.things[0].trf.rotation =
+                                Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
+                        }
+                        self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
+                    }
                 }
+
                 for dooridx in self.state.rooms[self.state.current_room].doors.iter() {
                     let door = self.state.doors[*dooridx as usize];
                     if s.check_collisions(door) {
@@ -268,10 +275,6 @@ impl frenderer::World for World {
                         s.trf.translation = get_spawn_pos(door.direction);
                         s.tex_model.trf.translation = get_spawn_pos(door.direction);
                         self.things[0].trf.translation = get_spawn_pos(door.direction);
-                        dbg!({ "" }, self.state.current_room);
-                        dbg!({ "" }, self.state.key_index);
-                        dbg!({ "" }, self.state.has_key);
-                        // dbg!({ "" }, s.tex_model.trf.translation);
                     }
                 }
 
@@ -289,8 +292,6 @@ impl frenderer::World for World {
                 }
 
                 //if we have the key, are in first room, and are collided with the chest
-                //we are finished with the game
-                //something is wrong with the code right here
                 if self.state.current_room == 0
                     && self.state.has_key
                     && s.check_item_collisions(
@@ -443,11 +444,11 @@ impl frenderer::World for World {
             );
 
             // render the sprites
-            rs.render_textured(
-                8,
-                self.sprites[0].tex_model.model.clone(),
-                FTextured::new(self.sprites[0].tex_model.trf),
-            );
+            // rs.render_textured(
+            //     8,
+            //     self.sprites[0].tex_model.model.clone(),
+            //     FTextured::new(self.sprites[0].tex_model.trf),
+            // );
 
             // Other render code
             // for (s_i, s) in self.sprites.iter_mut().enumerate() {
@@ -475,6 +476,13 @@ impl frenderer::World for World {
         }
         //final screen
         else if self.state.gameplaystate == GameplayState::FinalScreen {
+            self.camera = Camera::look_at(
+                Vec3::new(0., 40.0, 100.),
+                Vec3::new(0., 40.0, 0.),
+                Vec3::new(0., 1., 0.),
+                camera::Projection::Perspective { fov: PI / 2.0 },
+            );
+
             rs.render_textured(
                 0,
                 self.main_screen_textured[0].model.clone(),
@@ -498,8 +506,8 @@ fn main() -> Result<()> {
     );
 
     let camera = Camera::look_at(
-        Vec3::new(0., 0., 100.),
-        Vec3::new(0., 0., 0.),
+        Vec3::new(0., 40.0, 100.),
+        Vec3::new(0., 40.0, 0.),
         Vec3::new(0., 1., 0.),
         camera::Projection::Perspective { fov: PI / 2.0 },
     );
@@ -545,6 +553,16 @@ fn main() -> Result<()> {
         .assets()
         .create_textured_model(block_mesh, vec![block_tex]);
 
+    // let chest_tex = engine
+    //     .assets()
+    //     .load_texture(std::path::Path::new("content/chest tex.png"))?;
+    // let chest_mesh = engine
+    //     .assets()
+    //     .load_textured(std::path::Path::new("content/chest 2.fbx"))?;
+    // let chest_model = engine
+    //     .assets()
+    //     .create_textured_model(chest_mesh, vec![chest_tex, chest_tex]);
+
     //text plane
     let text_plane_test_tex = engine
         .assets()
@@ -562,12 +580,21 @@ fn main() -> Result<()> {
         &["RootNode", "Root"],
     )?;
 
-    let sprite_animation = engine.assets().load_anim(
+    let sprite_animation_run = engine.assets().load_anim(
         std::path::Path::new("content/run.fbx"),
         sprite_meshes[0],
         AnimationSettings { looping: true },
         "Root|Run",
     )?;
+
+    let sprite_animation_stand = engine.assets().load_anim(
+        std::path::Path::new("content/idle.fbx"),
+        sprite_meshes[0],
+        AnimationSettings { looping: false },
+        "Root|Idle",
+    )?;
+
+    let animation_vec = vec![sprite_animation_run, sprite_animation_stand];
 
     let sprite_texture = engine
         .assets()
@@ -584,7 +611,8 @@ fn main() -> Result<()> {
             0.05,
         ),
         sprite_model,
-        sprite_animation,
+        //run animation
+        animation_vec[0],
         AnimationState { t: 0.0 },
     );
 
@@ -626,7 +654,7 @@ fn main() -> Result<()> {
         // ],
         is_finished: false,
         has_key: false,
-        gameplaystate: GameplayState::Play,
+        gameplaystate: GameplayState::Mainscreen,
     };
 
     let world = World {
@@ -636,13 +664,18 @@ fn main() -> Result<()> {
         flats: vec![],
         //textured: vec![],
         main_screen_textured: vec![Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 0.0, 0.0), Rotor3::identity(), 80.0),
+            trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
             model: text_plane_model.clone(),
             name: String::from("text plane"),
         }],
 
         //key model
         textured: vec![
+            // Textured {
+            //     trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 5.0),
+            //     model: chest_model.clone(),
+            //     name: String::from("chest model"),
+            // },
             Textured {
                 trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 5.0),
                 model: block_model.clone(),
@@ -713,14 +746,8 @@ fn restart() -> GameState {
         current_room: 0, //index of room in rooms
         max_rooms: 4,
         key_index: 1,
-        //inventory: vec![],
-        // rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
         rooms: room_list,
         doors: door_list,
-        // doors: vec![
-        //     Door::new(Direction::North, 1, Direction::South),
-        //     Door::new(Direction::South, 0, Direction::North),
-        // ],
         is_finished: false,
         has_key: false,
         gameplaystate: GameplayState::Play,
