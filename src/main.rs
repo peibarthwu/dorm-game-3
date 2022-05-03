@@ -95,32 +95,37 @@ impl Sprite {
     }
 
     //we will be checking collisions with the textured object
-    //either a chest or a key
-    //shoudl probab
-    pub fn check_item_collisions(&mut self, direction: Direction, obj_edge_length: f32) -> bool {
-        //this isn't the best LOL
-        //if we are going north the object size will be 0 0 7.75 on the south side
-        // 0 0 -7.75 on the north side
-        //and has to be between
+    //this is not a great fnc in that I don't have it taking into account the location of the object
+    //and it is only from if the object is in the origin of the screen
+    //easy fix, but not rn
+    //block is 7.75 on all sides, the
 
+    //obj_edge_length is length from middle of object
+    pub fn check_item_collisions(
+        &mut self,
+        direction: Direction,
+        obj_edge_length_x: f32,
+        obj_edge_length_z: f32,
+        object: &Textured,
+    ) -> bool {
         if direction == Direction::North {
-            return self.trf.translation.x <= obj_edge_length
-                && self.trf.translation.x >= -obj_edge_length
-                && self.trf.translation.z <= obj_edge_length;
+            return self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x
+                && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
+                && self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z;
         } else if direction == Direction::East {
-            return self.trf.translation.z <= obj_edge_length
-                && self.trf.translation.z >= -obj_edge_length
-                && self.trf.translation.x <= -obj_edge_length;
+            return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
+                && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
+                && self.trf.translation.x <= object.trf.translation.x - obj_edge_length_x;
         } else if direction == Direction::West {
-            return self.trf.translation.z <= obj_edge_length
-                && self.trf.translation.z >= -obj_edge_length
-                && self.trf.translation.x <= obj_edge_length;
+            return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
+                && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
+                && self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x;
         }
         //facing south
         else {
-            return self.trf.translation.x <= obj_edge_length
-                && self.trf.translation.x >= -obj_edge_length
-                && self.trf.translation.x >= -obj_edge_length;
+            return self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x
+                && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
+                && self.trf.translation.x >= object.trf.translation.z - obj_edge_length_z;
         }
     }
 
@@ -271,10 +276,9 @@ impl frenderer::World for World {
                     }
                 }
 
-                //if there is a collision with the item in the center
-                if s.check_item_collisions(self.things[0].get_dir(), 7.75) {
+                //checking collision with key
+                if s.check_item_collisions(self.things[0].get_dir(), 7.75, 3.0, &self.textured[0]) {
                     self.state.has_key = true;
-                    //remove the item from the screen
                 }
             }
             // for m in self.flats.iter_mut() {
@@ -313,12 +317,22 @@ impl frenderer::World for World {
             let door_list = &self.state.rooms[self.state.current_room].doors;
 
             //render the key if the key index is the same
+            //it should be self.state.key_index == self.state.current_room when we run it
+            // == 2 for testing reasons
             if self.state.key_index == 2 && !self.state.has_key {
+                //render the key
                 rs.render_textured(
-                    9,
-                    self.textured[0].model.clone(),
-                    FTextured::new(self.textured[0].trf),
+                    10,
+                    self.textured[1].model.clone(),
+                    FTextured::new(self.textured[1].trf),
                 );
+
+                //render the block
+                // rs.render_textured(
+                //     9,
+                //     self.textured[0].model.clone(),
+                //     FTextured::new(self.textured[0].trf),
+                // );
             }
 
             //place doors
@@ -476,13 +490,23 @@ fn main() -> Result<()> {
 
     let key_tex = engine
         .assets()
-        .load_texture(std::path::Path::new("content/gold metal .png"))?;
+        .load_texture(std::path::Path::new("content/blue color.png"))?;
     let key_mesh = engine
         .assets()
-        .load_textured(std::path::Path::new("content/block y.fbx"))?;
+        .load_textured(std::path::Path::new("content/key please.fbx"))?;
     let key_model = engine
         .assets()
         .create_textured_model(key_mesh, vec![key_tex]);
+
+    let block_tex = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/gold metal .png"))?;
+    let block_mesh = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/block y.fbx"))?;
+    let block_model = engine
+        .assets()
+        .create_textured_model(block_mesh, vec![block_tex]);
 
     //text plane
     let text_plane_test_tex = engine
@@ -581,11 +605,18 @@ fn main() -> Result<()> {
         }],
 
         //key model
-        textured: vec![Textured {
-            trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 5.0),
-            model: key_model.clone(),
-            name: String::from("key model"),
-        }],
+        textured: vec![
+            Textured {
+                trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 5.0),
+                model: block_model.clone(),
+                name: String::from("block model"),
+            },
+            Textured {
+                trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 0.1),
+                model: key_model.clone(),
+                name: String::from("key model"),
+            },
+        ],
         door1: Textured {
             trf: Similarity3::new(
                 Vec3::new(0.0, 0.0, 0.0),
