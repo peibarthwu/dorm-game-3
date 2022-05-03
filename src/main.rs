@@ -63,7 +63,13 @@ impl GameObject {
     }
 
     pub fn move_by(&mut self, vec: Vec3) {
-        self.trf.append_translation(vec);
+        if self.trf.translation.x + vec.x < ROOMSIZE / 2.0
+            && self.trf.translation.x + vec.x > -ROOMSIZE / 2.0
+            && self.trf.translation.z + vec.z < ROOMSIZE / 2.0
+            && self.trf.translation.z + vec.z > -ROOMSIZE / 2.0
+        {
+            self.trf.append_translation(vec);
+        }
         //figure out append translation for the object
         //self.model.append_translation(vec);
     }
@@ -136,25 +142,29 @@ impl Sprite {
     pub fn check_collisions(&mut self, door: Door) -> bool {
         let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
         if door.direction == Direction::North {
-            return self.trf.translation.z >= door_worldspace.translation.z - DOOR_DEPTH * SCALE
+            return self.trf.translation.z + BUFFER / 2.0
+                >= door_worldspace.translation.z - DOOR_DEPTH * SCALE
                 && self.trf.translation.x
                     <= door_worldspace.translation.x + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.x
                     >= door_worldspace.translation.x - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::South {
-            return self.trf.translation.z <= door_worldspace.translation.z + DOOR_DEPTH * SCALE
+            return self.trf.translation.z - BUFFER / 2.0
+                <= door_worldspace.translation.z + DOOR_DEPTH * SCALE
                 && self.trf.translation.x
                     <= door_worldspace.translation.x + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.x
                     >= door_worldspace.translation.x - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::East {
-            return self.trf.translation.x >= door_worldspace.translation.x - DOOR_DEPTH * SCALE
+            return self.trf.translation.x + BUFFER / 2.0
+                >= door_worldspace.translation.x - DOOR_DEPTH * SCALE
                 && self.trf.translation.z
                     <= door_worldspace.translation.z + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.z
                     >= door_worldspace.translation.z - DOOR_WIDTH * SCALE * 3.0;
         } else if door.direction == Direction::West {
-            return self.trf.translation.x <= door_worldspace.translation.x + DOOR_DEPTH * SCALE
+            return self.trf.translation.x - BUFFER / 2.0
+                <= door_worldspace.translation.x + DOOR_DEPTH * SCALE
                 && self.trf.translation.z
                     <= door_worldspace.translation.z + DOOR_WIDTH * SCALE * 3.0
                 && self.trf.translation.z
@@ -1039,7 +1049,6 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
             let room2 = Room::new(vec![num_doors as usize + 1]); //create next room
             rooms.push(room2);
         }
-
         n += 1;
     }
 
@@ -1054,8 +1063,9 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
         let back_door = create_bidirectional_door(door, roomidx);
         doors.push(back_door);
         let dest_room = Room::new(vec![doors.len() - 1]); //create next room
-        curr_dead_ends += 1;
         rooms.push(dest_room);
+
+        curr_dead_ends += 1;
     }
     dbg!(&doors);
     dbg!(&rooms);
@@ -1079,14 +1089,18 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
             check2 = false;
         }
     }
-    while !(check && check2) {
+    while check == false || check2 == false {
         door = generate_door(target);
         for n in 0..room.doors.len() - 1 {
             if door.direction == doors[room.doors[n]].direction {
                 check = false;
+            } else {
+                check = true;
             }
             if door.target == doors[room.doors[n]].target {
                 check2 = false;
+            } else {
+                check2 = true;
             }
         }
     }
