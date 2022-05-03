@@ -727,17 +727,17 @@ fn main() -> Result<()> {
         //textured: vec![],
         main_screen_textured: vec![
             Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
+                trf: Similarity3::new(Vec3::new(0.0, 30.0, 0.0), Rotor3::identity(), 80.0),
                 model: text_plane_main_screen_model.clone(),
                 name: String::from("main screen text plane"),
             },
             Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
+                trf: Similarity3::new(Vec3::new(0.0, 30.0, 0.0), Rotor3::identity(), 80.0),
                 model: text_plane_instructions_model.clone(),
                 name: String::from("instructions text plane"),
             },
             Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 20.0, 0.0), Rotor3::identity(), 80.0),
+                trf: Similarity3::new(Vec3::new(0.0, 30.0, 0.0), Rotor3::identity(), 80.0),
                 model: text_plane_final_model.clone(),
                 name: String::from("final text plane"),
             },
@@ -751,7 +751,7 @@ fn main() -> Result<()> {
             //     name: String::from("chest model"),
             // },
             Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 5.0),
+                trf: Similarity3::new(Vec3::new(0.0, 5.0, 0.0), Rotor3::identity(), 5.0),
                 model: block_model.clone(),
                 name: String::from("block model"),
             },
