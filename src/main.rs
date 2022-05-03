@@ -726,7 +726,7 @@ fn main() -> Result<()> {
     let game_state = GameState {
         current_room: 0, //index of room in rooms
         max_rooms: 4,
-        key_index: 1,
+        key_index: keyidx,
         //inventory: vec![],
         // rooms: vec![Room::new(vec![0]), Room::new(vec![1])],
         rooms: room_list,
