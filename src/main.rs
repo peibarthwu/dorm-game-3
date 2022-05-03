@@ -2,11 +2,15 @@
 use frenderer::animation::{AnimationSettings, AnimationState};
 use frenderer::assets::AnimRef;
 use frenderer::camera::{self, Camera};
+use kira::instance::InstanceSettings;
+use kira::manager::{AudioManager, AudioManagerSettings};
+use kira::sound::SoundSettings;
 //use frenderer::image::Image;
 use frenderer::renderer::skinned::SingleRenderState as FSkinned;
 use frenderer::renderer::textured::SingleRenderState as FTextured;
 use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
+use kira::sound::handle::SoundHandle;
 use rand::Rng;
 use scene3d::types::*;
 use std::rc::Rc;
@@ -34,6 +38,7 @@ pub struct GameState {
     pub is_finished: bool,
     pub has_key: bool,
     pub gameplaystate: GameplayState,
+    pub audio_play: bool,
 }
 
 #[derive(Clone)]
@@ -115,6 +120,7 @@ impl Sprite {
         obj_edge_length_z: f32,
         object: &Textured,
     ) -> bool {
+        //something up with going easy
         if direction == Direction::North {
             return self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x
                 && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
@@ -128,8 +134,8 @@ impl Sprite {
         } else if direction == Direction::West {
             return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
                 && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
-                && self.trf.translation.x >= object.trf.translation.x + obj_edge_length_x
-                && self.trf.translation.x <= object.trf.translation.x - obj_edge_length_x;
+                && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
+                && self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x;
         }
         //facing south
         else {
@@ -193,6 +199,7 @@ pub enum GameplayState {
 }
 struct World {
     camera: Camera,
+    audio: Vec<SoundHandle>,
     things: Vec<GameObject>,
     sprites: Vec<Sprite>,
     flats: Vec<Flat>,
@@ -225,6 +232,11 @@ impl frenderer::World for World {
     fn update(&mut self, input: &frenderer::Input, _assets: &mut frenderer::assets::Assets) {
         //currently WAS
 
+        if self.state.audio_play {
+            self.audio[0].play(InstanceSettings::default());
+            self.state.audio_play = false;
+        }
+
         // let yaw = input.key_axis(Key::Q, Key::W) * PI / 4.0 * DT as f32;
         // let pitch = input.key_axis(Key::A, Key::S) * PI / 4.0 * DT as f32;
         // let roll = input.key_axis(Key::Z, Key::X) * PI / 4.0 * DT as f32;
@@ -251,160 +263,15 @@ impl frenderer::World for World {
             self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
-                // dbg!(
-                //     { "" },
-                //     s.check_item_collisions(
-                //         self.things[0].get_dir(),
-                //         7.75,
-                //         7.75,
-                //         &self.textured[0],
-                //     )
-                // );
-                //the dumbest collision code in the world
-                //if there is a collision and we are in the first room
-                // if self.state.current_room == 0
-                //     && s.check_item_collisions(
-                //         self.things[0].get_dir(),
-                //         7.75,
-                //         7.75,
-                //         &self.textured[0],
-                //     )
-                // {
-                //     if self.things[0].get_dir() == Direction::North
-                //         && s.check_item_collisions(
-                //             self.things[0].get_dir(),
-                //             7.75,
-                //             7.75,
-                //             &self.textured[0],
-                //         )
-                //     {
-                //         if input.is_key_down(Key::S) {
-                //             s.move_by(Vec3::new(0.0, 0.0, SPEED));
-                //             if self.things[0].get_dir() != Direction::South {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, 0.0);
-                //             }
-                //             self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
-                //         }
-                //         if input.is_key_down(Key::A) {
-                //             s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                //             if self.things[0].get_dir() != Direction::West {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                //         }
-                //         if input.is_key_down(Key::D) {
-                //             s.move_by(Vec3::new(SPEED, 0.0, 0.0));
-                //             if self.things[0].get_dir() != Direction::East {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
-                //         }
-                //     }
-                //     if self.things[0].get_dir() == Direction::East
-                //         && s.check_item_collisions(
-                //             self.things[0].get_dir(),
-                //             7.75,
-                //             7.75,
-                //             &self.textured[0],
-                //         )
-                //     {
-                //         if input.is_key_down(Key::W) {
-                //             s.move_by(Vec3::new(0.0, 0.0, -SPEED));
-                //             if self.things[0].get_dir() != Direction::North {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
-                //         }
-                //         if input.is_key_down(Key::S) {
-                //             s.move_by(Vec3::new(0.0, 0.0, SPEED));
-                //             if self.things[0].get_dir() != Direction::South {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, 0.0);
-                //             }
-                //             self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
-                //         }
-                //         if input.is_key_down(Key::A) {
-                //             s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                //             if self.things[0].get_dir() != Direction::West {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                //         }
-                //     }
-                //     if self.things[0].get_dir() == Direction::West
-                //         && s.check_item_collisions(
-                //             self.things[0].get_dir(),
-                //             7.75,
-                //             7.75,
-                //             &self.textured[0],
-                //         )
-                //     {
-                //         if input.is_key_down(Key::W) {
-                //             s.move_by(Vec3::new(0.0, 0.0, -SPEED));
-                //             if self.things[0].get_dir() != Direction::North {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
-                //         }
-                //         if input.is_key_down(Key::S) {
-                //             s.move_by(Vec3::new(0.0, 0.0, SPEED));
-                //             if self.things[0].get_dir() != Direction::South {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, 0.0);
-                //             }
-                //             self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
-                //         }
-                //         if input.is_key_down(Key::D) {
-                //             s.move_by(Vec3::new(SPEED, 0.0, 0.0));
-                //             if self.things[0].get_dir() != Direction::East {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
-                //         }
-                //     }
-                //     if self.things[0].get_dir() == Direction::South
-                //         && s.check_item_collisions(
-                //             self.things[0].get_dir(),
-                //             7.75,
-                //             7.75,
-                //             &self.textured[0],
-                //         )
-                //     {
-                //         if input.is_key_down(Key::A) {
-                //             s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                //             if self.things[0].get_dir() != Direction::West {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                //         }
-                //         if input.is_key_down(Key::D) {
-                //             s.move_by(Vec3::new(SPEED, 0.0, 0.0));
-                //             if self.things[0].get_dir() != Direction::East {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
-                //         }
-
-                //         if input.is_key_down(Key::W) {
-                //             s.move_by(Vec3::new(0.0, 0.0, -SPEED));
-                //             if self.things[0].get_dir() != Direction::North {
-                //                 self.things[0].trf.rotation =
-                //                     Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
-                //             }
-                //             self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
-                //         }
-                //     }
-                // }
-
+                dbg!(
+                    { "" },
+                    s.check_item_collisions(
+                        self.things[0].get_dir(),
+                        7.75,
+                        7.75,
+                        &self.textured[0],
+                    )
+                );
                 //if we are not checking for chest collisions
                 if input.is_key_down(Key::W) {
                     s.move_by(Vec3::new(0.0, 0.0, -SPEED));
@@ -455,7 +322,7 @@ impl frenderer::World for World {
                         self.things[0].get_dir(),
                         7.75,
                         3.0,
-                        &self.textured[0],
+                        &self.textured[1],
                     )
                 {
                     //dbg!({ "" }, self.textured[0].trf.translation);
@@ -484,9 +351,7 @@ impl frenderer::World for World {
         }
         //restart the game by pressing S, and randomize
         else if self.state.gameplaystate == GameplayState::FinalScreen {
-            
             if input.is_key_down(Key::R) {
-                
                 self.state = restart(self.state.max_rooms);
             }
         }
@@ -771,6 +636,11 @@ fn main() -> Result<()> {
         .assets()
         .create_textured_model(text_plane_final_mesh, vec![text_plane_final]);
 
+    let mut audio_manager = AudioManager::new(AudioManagerSettings::default()).unwrap();
+    let ghost_choir = audio_manager
+        .load_sound("content/ghost-choir.ogg", SoundSettings::default())
+        .unwrap();
+
     //code for skinned model and gameObject
     let sprite_meshes = engine.assets().load_skinned(
         std::path::Path::new("content/characterSmall.fbx"),
@@ -846,10 +716,12 @@ fn main() -> Result<()> {
         is_finished: false,
         has_key: false,
         gameplaystate: GameplayState::Mainscreen,
+        audio_play: true,
     };
 
     let world = World {
         camera,
+        audio: vec![ghost_choir],
         things: vec![sprite_obj],
         sprites: vec![game_sprite],
         flats: vec![],
@@ -943,7 +815,8 @@ fn main() -> Result<()> {
 
 //fix this so that max_rooms and key_index are randomized
 fn restart(curr_number_rooms: usize) -> GameState {
-    let (room_list, door_list) = generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);    
+    let (room_list, door_list) =
+        generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);
     let mut rng = rand::thread_rng();
     let keyidx = rng.gen_range(1..curr_number_rooms + DIFFICULTY);      
     dbg!({"key loca: "}, keyidx);     
@@ -956,6 +829,7 @@ fn restart(curr_number_rooms: usize) -> GameState {
         is_finished: false,
         has_key: false,
         gameplaystate: GameplayState::Play,
+        audio_play: false,
     };
 }
 
