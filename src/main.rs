@@ -445,6 +445,7 @@ impl frenderer::World for World {
                         s.trf.translation = get_spawn_pos(door.direction);
                         s.tex_model.trf.translation = get_spawn_pos(door.direction);
                         self.things[0].trf.translation = get_spawn_pos(door.direction);
+                        dbg!(self.state.current_room);
                     }
                 }
 
@@ -944,7 +945,8 @@ fn main() -> Result<()> {
 fn restart(curr_number_rooms: usize) -> GameState {
     let (room_list, door_list) = generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);    
     let mut rng = rand::thread_rng();
-    let keyidx = rng.gen_range(0..curr_number_rooms + DIFFICULTY);           
+    let keyidx = rng.gen_range(1..curr_number_rooms + DIFFICULTY);      
+    dbg!({"key loca: "}, keyidx);     
     return GameState {
         current_room: 0, //index of room in rooms
         max_rooms: curr_number_rooms + DIFFICULTY,
@@ -1054,8 +1056,11 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
             rooms.push(room2);
         }
         n += 1;
+        dbg!({"while 1"});
+
     }
 
+    //generate dead ends
     while curr_dead_ends < num_dead_ends {
         let roomidx = rng.gen_range(0..rooms.len() - 1);
         let srcroom = &mut rooms[roomidx]; //get room index
@@ -1070,6 +1075,7 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
         rooms.push(dest_room);
 
         curr_dead_ends += 1;
+        dbg!({"while 2"});
     }
     dbg!(&doors);
     dbg!(&rooms);
@@ -1085,7 +1091,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
     //else we need to make sure there are no repeats
     let mut check = true; //unique direction
     let mut check2 = true; //unique target
-    for n in 0..room.doors.len() - 1 {
+    for n in 0..room.doors.len() {
         if door.direction == doors[room.doors[n]].direction {
             check = false;
         }
@@ -1095,7 +1101,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
     }
     while check == false || check2 == false {
         door = generate_door(target);
-        for n in 0..room.doors.len() - 1 {
+        for n in 0..room.doors.len() {
             if door.direction == doors[room.doors[n]].direction {
                 check = false;
             } else {
@@ -1107,6 +1113,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
                 check2 = true;
             }
         }
+        dbg!({"while 3"});
     }
     return door;
 }
