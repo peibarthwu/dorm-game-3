@@ -2,15 +2,14 @@
 use frenderer::animation::{AnimationSettings, AnimationState};
 use frenderer::assets::AnimRef;
 use frenderer::camera::{self, Camera};
-use kira::instance::InstanceSettings;
-use kira::manager::{AudioManager, AudioManagerSettings};
-use kira::sound::SoundSettings;
-//use frenderer::image::Image;
 use frenderer::renderer::skinned::SingleRenderState as FSkinned;
 use frenderer::renderer::textured::SingleRenderState as FTextured;
 use frenderer::types::*;
 use frenderer::{Engine, FrendererSettings, Key, Result, SpriteRendererSettings};
+use kira::instance::InstanceSettings;
+use kira::manager::{AudioManager, AudioManagerSettings};
 use kira::sound::handle::SoundHandle;
+use kira::sound::SoundSettings;
 use rand::Rng;
 use scene3d::types::*;
 use std::rc::Rc;
@@ -32,7 +31,6 @@ pub struct GameState {
     pub current_room: usize, //index of room in rooms
     pub max_rooms: usize,
     pub key_index: usize,
-    //pub inventory: Vec<GameObject>,
     pub rooms: Vec<Room>,
     pub doors: Vec<Door>,
     pub is_finished: bool,
@@ -76,8 +74,6 @@ impl GameObject {
         {
             self.trf.append_translation(vec);
         }
-        //figure out append translation for the object
-        //self.model.append_translation(vec);
     }
 
     pub fn get_dir(&mut self) -> Direction {
@@ -106,13 +102,6 @@ impl Sprite {
         self.tex_model.trf.append_translation(vec);
     }
 
-    //we will be checking collisions with the textured object
-    //this is not a great fnc in that I don't have it taking into account the location of the object
-    //and it is only from if the object is in the origin of the screen
-    //easy fix, but not rn
-    //block is 7.75 on all sides, the
-
-    //obj_edge_length is length from middle of object
     pub fn check_item_collisions(
         &mut self,
         direction: Direction,
@@ -120,17 +109,17 @@ impl Sprite {
         obj_edge_length_z: f32,
         object: &Textured,
     ) -> bool {
-        if direction == Direction::North || direction == Direction:: South{
+        if direction == Direction::North || direction == Direction::South {
             return self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x
                 && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
                 && self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
                 && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z;
-        } else if direction == Direction::East || direction == Direction:: West{
+        } else if direction == Direction::East || direction == Direction::West {
             return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
                 && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
                 && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
                 && self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x;
-        } else{
+        } else {
             return false;
         }
     }
@@ -168,14 +157,6 @@ impl Sprite {
         } else {
             return false;
         }
-        // let door_worldspace = get_trf(door.direction, ROOMSIZE, SCALE);
-
-        // let door_collider_rect = Rect::new(door_worldspace.translation.x, door_worldspace.translation.y, self.door_collider.x,  self.door_collider.x);
-        // return (self.trf.translation.x <= door_worldspace.translation.x && self.pos.y <= other.pos.y && obr.x <= br.x && obr.y <= br.y
-
-        //     self.trf.translation.x - door_worldspace.translation.x).abs() <= self.size.x / 2.
-        //     && (self.trf.translation.z - door_worldspace.translation.z).abs() <= COLLISION_RADIUS;
-        // // if self.cel.contains(door_worldspace.translation)
     }
 }
 
@@ -191,7 +172,6 @@ struct World {
     audio: Vec<SoundHandle>,
     things: Vec<GameObject>,
     sprites: Vec<Sprite>,
-    flats: Vec<Flat>,
     main_screen_textured: Vec<Textured>,
     textured: Vec<Textured>,
     door1: Textured,
@@ -249,46 +229,35 @@ impl frenderer::World for World {
         }
         //controls for gameplaystate play
         else if self.state.gameplaystate == GameplayState::Play {
-
             for s in self.sprites.iter_mut() {
-                // dbg!(
-                //     { "" },
-                //     s.check_item_collisions(
-                //         self.things[0].get_dir(),
-                //         7.75,
-                //         7.75,
-                //         &self.textured[0],
-                //     )
-                // );
-                if s.check_item_collisions (
-                    self.things[0].get_dir(),
-                    7.75,
-                    7.75,
-                    &self.textured[0],
-                ) && self.state.current_room == 0{ // check if collide with item and spawn back
+                if s.check_item_collisions(self.things[0].get_dir(), 7.75, 7.75, &self.textured[0])
+                    && self.state.current_room == 0
+                {
+                    // check if collide with item and spawn back
                     dbg!(self.things[0].get_dir());
-                    if self.things[0].get_dir() == Direction::North{
-                        s.trf.translation += Vec3::new(0.0, 0.0, BUFFER/2.0);
-                        s.tex_model.trf.translation += Vec3::new(0.0, 0.0, BUFFER/2.0);
-                        self.things[0].trf.translation += Vec3::new(0.0, 0.0, BUFFER/2.0);
-                    } else if self.things[0].get_dir() == Direction::South{
-                        s.trf.translation += Vec3::new(0.0, 0.0, -BUFFER/2.0);
-                        s.tex_model.trf.translation += Vec3::new(0.0, 0.0, -BUFFER/2.0);
-                        self.things[0].trf.translation += Vec3::new(0.0, 0.0, -BUFFER/2.0);
-                    } else if self.things[0].get_dir() == Direction::East{
-                        s.trf.translation += Vec3::new(-BUFFER/2.0, 0.0, 0.0);
-                        s.tex_model.trf.translation += Vec3::new(-BUFFER/2.0, 0.0, 0.0);
-                        self.things[0].trf.translation += Vec3::new(-BUFFER/2.0, 0.0, 0.0);
+                    if self.things[0].get_dir() == Direction::North {
+                        s.trf.translation += Vec3::new(0.0, 0.0, BUFFER / 2.0);
+                        s.tex_model.trf.translation += Vec3::new(0.0, 0.0, BUFFER / 2.0);
+                        self.things[0].trf.translation += Vec3::new(0.0, 0.0, BUFFER / 2.0);
+                    } else if self.things[0].get_dir() == Direction::South {
+                        s.trf.translation += Vec3::new(0.0, 0.0, -BUFFER / 2.0);
+                        s.tex_model.trf.translation += Vec3::new(0.0, 0.0, -BUFFER / 2.0);
+                        self.things[0].trf.translation += Vec3::new(0.0, 0.0, -BUFFER / 2.0);
+                    } else if self.things[0].get_dir() == Direction::East {
+                        s.trf.translation += Vec3::new(-BUFFER / 2.0, 0.0, 0.0);
+                        s.tex_model.trf.translation += Vec3::new(-BUFFER / 2.0, 0.0, 0.0);
+                        self.things[0].trf.translation += Vec3::new(-BUFFER / 2.0, 0.0, 0.0);
                     } else {
-                        s.trf.translation += Vec3::new(BUFFER/2.0, 0.0, 0.0);
-                        s.tex_model.trf.translation += Vec3::new(BUFFER/2.0, 0.0, 0.0);
-                        self.things[0].trf.translation += Vec3::new(BUFFER/2.0, 0.0, 0.0);
+                        s.trf.translation += Vec3::new(BUFFER / 2.0, 0.0, 0.0);
+                        s.tex_model.trf.translation += Vec3::new(BUFFER / 2.0, 0.0, 0.0);
+                        self.things[0].trf.translation += Vec3::new(BUFFER / 2.0, 0.0, 0.0);
                     }
-                } else{
-                    if input.is_key_down(Key::W) ||
-                    input.is_key_down(Key::A) ||
-                    input.is_key_down(Key::S) ||
-                    input.is_key_down(Key::D) {
+                } else {
+                    if input.is_key_down(Key::W)
+                        || input.is_key_down(Key::A)
+                        || input.is_key_down(Key::S)
+                        || input.is_key_down(Key::D)
+                    {
                         self.things[0].tick_animation();
                     }
                     if input.is_key_down(Key::W) {
@@ -505,30 +474,6 @@ impl frenderer::World for World {
             //     self.sprites[0].tex_model.model.clone(),
             //     FTextured::new(self.sprites[0].tex_model.trf),
             // );
-
-            // Other render code
-            // for (s_i, s) in self.sprites.iter_mut().enumerate() {
-            //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-            //     // rs.render_textured(s_i, s.tex_model.model.clone(), FTextured::new(s.tex_model.trf));
-            // }
-
-            // for (m_i, m) in self.flats.iter_mut().enumerate() {
-            //     rs.render_flat(m_i, m.model.clone(), FFlat::new(m.trf));
-            // }
-
-            // for (t_i, t) in self.textured.iter_mut().enumerate() {
-            //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
-            // }
-
-            // for (s_i, s) in self.sprites.iter_mut().enumerate() {
-            //     rs.render_sprite(s_i, s.tex, FSprite::new(s.cel, s.trf, s.size));
-            // }
-            //render sprite
-
-            //we still need to render the plane
-            // for (t_i, t) in self.textured.iter_mut().enumerate() {
-            //     rs.render_textured(4 as usize, t.model.clone(), FTextured::new(t.trf));
-            // }
         } else if self.state.gameplaystate == GameplayState::FinalScreen {
             self.camera = Camera::look_at(
                 Vec3::new(0., 40.0, 100.),
@@ -584,11 +529,10 @@ fn main() -> Result<()> {
         .load_textured(std::path::Path::new("content/door.fbx"))?;
     let door_model = engine.assets().create_textured_model(door, vec![door_tex]);
 
-
     // room model
     let room_tex = engine
-    .assets()
-    .load_texture(std::path::Path::new("content/tex2.png"))?;
+        .assets()
+        .load_texture(std::path::Path::new("content/tex2.png"))?;
     let room = engine
         .assets()
         .load_textured(std::path::Path::new("content/room.fbx"))?;
@@ -614,18 +558,6 @@ fn main() -> Result<()> {
         .assets()
         .create_textured_model(block_mesh, vec![block_tex]);
 
-    // let chest_tex = engine
-    //     .assets()
-    //     .load_texture(std::path::Path::new("content/chest tex.png"))?;
-    // let chest_mesh = engine
-    //     .assets()
-    //     .load_textured(std::path::Path::new("content/chest 2.fbx"))?;
-    // let chest_model = engine
-    //     .assets()
-    //     .create_textured_model(chest_mesh, vec![chest_tex, chest_tex]);
-
-    //text plane
-    //text plane
     let text_plane_main = engine
         .assets()
         .load_texture(std::path::Path::new("content/main screen tex.png"))?;
@@ -750,8 +682,6 @@ fn main() -> Result<()> {
         audio: vec![ghost_choir],
         things: vec![sprite_obj],
         sprites: vec![game_sprite],
-        flats: vec![],
-        //textured: vec![],
         main_screen_textured: vec![
             Textured {
                 trf: Similarity3::new(Vec3::new(0.0, 30.0, 0.0), Rotor3::identity(), 80.0),
@@ -772,11 +702,6 @@ fn main() -> Result<()> {
 
         //key model
         textured: vec![
-            // Textured {
-            //     trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 5.0),
-            //     model: chest_model.clone(),
-            //     name: String::from("chest model"),
-            // },
             Textured {
                 trf: Similarity3::new(Vec3::new(0.0, 5.0, 0.0), Rotor3::identity(), 5.0),
                 model: block_model.clone(),
@@ -844,8 +769,8 @@ fn restart(curr_number_rooms: usize) -> GameState {
     let (room_list, door_list) =
         generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);
     let mut rng = rand::thread_rng();
-    let keyidx = rng.gen_range(1..curr_number_rooms + DIFFICULTY);      
-    dbg!({"key loca: "}, keyidx);     
+    let keyidx = rng.gen_range(1..curr_number_rooms + DIFFICULTY);
+    dbg!({ "key loca: " }, keyidx);
     return GameState {
         current_room: 0, //index of room in rooms
         max_rooms: curr_number_rooms + DIFFICULTY,
@@ -956,8 +881,7 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
             rooms.push(room2);
         }
         n += 1;
-        dbg!({"while 1"});
-
+        dbg!({ "while 1" });
     }
 
     //generate dead ends
@@ -975,7 +899,7 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
         rooms.push(dest_room);
 
         curr_dead_ends += 1;
-        dbg!({"while 2"});
+        dbg!({ "while 2" });
     }
     dbg!(&doors);
     dbg!(&rooms);
@@ -1013,7 +937,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
                 check2 = true;
             }
         }
-        dbg!({"while 3"});
+        dbg!({ "while 3" });
     }
     return door;
 }
