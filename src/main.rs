@@ -37,6 +37,7 @@ pub struct GameState {
     pub has_key: bool,
     pub gameplaystate: GameplayState,
     pub audio_play: bool,
+    pub has_rotated: bool,
 }
 
 #[derive(Clone)]
@@ -229,6 +230,13 @@ impl frenderer::World for World {
         }
         //controls for gameplaystate play
         else if self.state.gameplaystate == GameplayState::Play {
+            if !self.state.has_rotated {
+                self.camera
+                    .transform
+                    .prepend_rotation(Rotor3::from_rotation_xz(PI / 4.0));
+                self.state.has_rotated = true;
+            }
+
             for s in self.sprites.iter_mut() {
                 if s.check_item_collisions(self.things[0].get_dir(), 7.75, 7.75, &self.textured[0])
                     && self.state.current_room == 0
@@ -332,10 +340,12 @@ impl frenderer::World for World {
                 }
             }
 
-            let camera_drot = input.key_axis(Key::Left, Key::Right) * PI / 4.0 * DT as f32;
-            self.camera
-                .transform
-                .prepend_rotation(Rotor3::from_rotation_xz(camera_drot));
+            // let camera_drot = input.key_axis(Key::Left, Key::Right) * PI / 4.0 * DT as f32;
+            // dbg!({ "" }, self.camera.transform.translation);
+            // dbg!({ "" }, self.camera.transform.rotation);
+            // self.camera
+            //     .transform
+            //     .prepend_rotation(Rotor3::from_rotation_xz(-0.3887));
         }
         //restart the game by pressing S, and randomize
         else if self.state.gameplaystate == GameplayState::FinalScreen {
@@ -675,6 +685,7 @@ fn main() -> Result<()> {
         has_key: false,
         gameplaystate: GameplayState::Mainscreen,
         audio_play: true,
+        has_rotated: false,
     };
 
     let world = World {
@@ -781,6 +792,7 @@ fn restart(curr_number_rooms: usize) -> GameState {
         has_key: false,
         gameplaystate: GameplayState::Play,
         audio_play: false,
+        has_rotated: false,
     };
 }
 
