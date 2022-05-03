@@ -396,10 +396,16 @@ impl frenderer::World for World {
             //render the chest in the starting room
             else if self.state.current_room == 0 {
                 //render the block
+                // rs.render_textured(
+                //     9,
+                //     self.textured[0].model.clone(),
+                //     FTextured::new(self.textured[0].trf),
+                // );
+
                 rs.render_textured(
-                    9,
-                    self.textured[0].model.clone(),
-                    FTextured::new(self.textured[0].trf),
+                    10,
+                    self.textured[2].model.clone(),
+                    FTextured::new(self.textured[2].trf),
                 );
             }
 
@@ -622,6 +628,16 @@ fn main() -> Result<()> {
         .assets()
         .create_textured_model(block_mesh, vec![block_tex]);
 
+    let chest_tex = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/minecraft chets tex.png"))?;
+    let chest_mesh = engine
+        .assets()
+        .load_textured(std::path::Path::new("content/minecraft chest.fbx"))?;
+    let chest_model = engine
+        .assets()
+        .create_textured_model(chest_mesh, vec![chest_tex]);
+
     let text_plane_main = engine
         .assets()
         .load_texture(std::path::Path::new("content/main screen tex.png"))?;
@@ -786,6 +802,11 @@ fn main() -> Result<()> {
                 trf: Similarity3::new(Vec3::new(0.0, 10.0, 0.0), Rotor3::identity(), 0.1),
                 model: key_model.clone(),
                 name: String::from("key model"),
+            },
+            Textured {
+                trf: Similarity3::new(Vec3::new(0.0, 5.0, 0.0), Rotor3::identity(), 5.0),
+                model: chest_model.clone(),
+                name: String::from("chest model"),
             },
         ],
         door1: Textured {
