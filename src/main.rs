@@ -308,7 +308,7 @@ impl frenderer::World for World {
                         s.trf.translation = get_spawn_pos(door.direction);
                         s.tex_model.trf.translation = get_spawn_pos(door.direction);
                         self.things[0].trf.translation = get_spawn_pos(door.direction);
-                        dbg!(self.state.current_room);
+                        // dbg!(self.state.current_room);
                     }
                 }
 
@@ -781,7 +781,7 @@ fn restart(curr_number_rooms: usize) -> GameState {
         generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);
     let mut rng = rand::thread_rng();
     let keyidx = rng.gen_range(1..curr_number_rooms + DIFFICULTY);
-    dbg!({ "key loca: " }, keyidx);
+    // dbg!({ "key loca: " }, keyidx);
     return GameState {
         current_room: 0, //index of room in rooms
         max_rooms: curr_number_rooms + DIFFICULTY,
