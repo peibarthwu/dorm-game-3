@@ -1,4 +1,3 @@
-use frenderer::assets::TextureRef;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Vec2i {
@@ -34,15 +33,15 @@ pub enum Direction {
 #[derive(Clone, Debug)]
 pub struct Room {
     pub doors: Vec<usize>,
-    // pub floor: TextureRef,        //figure out the type for a texture
+    pub tex_idx: usize,        //figure out the type for a texture
     // pub objects: Vec<GameObject>, //vec of game objects, perhaps including a key
 }
 
 impl Room {
-    pub fn new(doors: Vec<usize>) -> Self {
+    pub fn new(doors: Vec<usize>, tex_idx: usize) -> Self {
         return Room {
             doors,
-            // floor,
+            tex_idx,
             // objects,
         };
     }
