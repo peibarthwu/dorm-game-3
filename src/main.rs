@@ -120,29 +120,18 @@ impl Sprite {
         obj_edge_length_z: f32,
         object: &Textured,
     ) -> bool {
-        //something up with going easy
-        if direction == Direction::North {
+        if direction == Direction::North || direction == Direction:: South{
             return self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x
                 && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
                 && self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
                 && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z;
-        } else if direction == Direction::East {
+        } else if direction == Direction::East || direction == Direction:: West{
             return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
                 && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
                 && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
                 && self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x;
-        } else if direction == Direction::West {
-            return self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z
-                && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
-                && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
-                && self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x;
-        }
-        //facing south
-        else {
-            return self.trf.translation.x <= object.trf.translation.x + obj_edge_length_x
-                && self.trf.translation.x >= object.trf.translation.x - obj_edge_length_x
-                && self.trf.translation.z >= object.trf.translation.z - obj_edge_length_z
-                && self.trf.translation.z <= object.trf.translation.z + obj_edge_length_z;
+        } else{
+            return false;
         }
     }
 
@@ -260,49 +249,79 @@ impl frenderer::World for World {
         }
         //controls for gameplaystate play
         else if self.state.gameplaystate == GameplayState::Play {
-            self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
-                dbg!(
-                    { "" },
-                    s.check_item_collisions(
-                        self.things[0].get_dir(),
-                        7.75,
-                        7.75,
-                        &self.textured[0],
-                    )
-                );
-                //if we are not checking for chest collisions
-                if input.is_key_down(Key::W) {
-                    s.move_by(Vec3::new(0.0, 0.0, -SPEED));
-                    if self.things[0].get_dir() != Direction::North {
-                        self.things[0].trf.rotation =
-                            Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
+                // dbg!(
+                //     { "" },
+                //     s.check_item_collisions(
+                //         self.things[0].get_dir(),
+                //         7.75,
+                //         7.75,
+                //         &self.textured[0],
+                //     )
+                // );
+                if s.check_item_collisions (
+                    self.things[0].get_dir(),
+                    7.75,
+                    7.75,
+                    &self.textured[0],
+                ) && self.state.current_room == 0{ // check if collide with item and spawn back
+                    dbg!(self.things[0].get_dir());
+                    if self.things[0].get_dir() == Direction::North{
+                        s.trf.translation += Vec3::new(0.0, 0.0, BUFFER/2.0);
+                        s.tex_model.trf.translation += Vec3::new(0.0, 0.0, BUFFER/2.0);
+                        self.things[0].trf.translation += Vec3::new(0.0, 0.0, BUFFER/2.0);
+                    } else if self.things[0].get_dir() == Direction::South{
+                        s.trf.translation += Vec3::new(0.0, 0.0, -BUFFER/2.0);
+                        s.tex_model.trf.translation += Vec3::new(0.0, 0.0, -BUFFER/2.0);
+                        self.things[0].trf.translation += Vec3::new(0.0, 0.0, -BUFFER/2.0);
+                    } else if self.things[0].get_dir() == Direction::East{
+                        s.trf.translation += Vec3::new(-BUFFER/2.0, 0.0, 0.0);
+                        s.tex_model.trf.translation += Vec3::new(-BUFFER/2.0, 0.0, 0.0);
+                        self.things[0].trf.translation += Vec3::new(-BUFFER/2.0, 0.0, 0.0);
+                    } else {
+                        s.trf.translation += Vec3::new(BUFFER/2.0, 0.0, 0.0);
+                        s.tex_model.trf.translation += Vec3::new(BUFFER/2.0, 0.0, 0.0);
+                        self.things[0].trf.translation += Vec3::new(BUFFER/2.0, 0.0, 0.0);
                     }
-                    self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
-                }
-                if input.is_key_down(Key::S) {
-                    s.move_by(Vec3::new(0.0, 0.0, SPEED));
-                    if self.things[0].get_dir() != Direction::South {
-                        self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
+                } else{
+                    if input.is_key_down(Key::W) ||
+                    input.is_key_down(Key::A) ||
+                    input.is_key_down(Key::S) ||
+                    input.is_key_down(Key::D) {
+                        self.things[0].tick_animation();
                     }
-                    self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
-                }
-                if input.is_key_down(Key::A) {
-                    s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                    if self.things[0].get_dir() != Direction::West {
-                        self.things[0].trf.rotation =
-                            Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
+                    if input.is_key_down(Key::W) {
+                        s.move_by(Vec3::new(0.0, 0.0, -SPEED));
+                        if self.things[0].get_dir() != Direction::North {
+                            self.things[0].trf.rotation =
+                                Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
+                        }
+                        self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
                     }
-                    self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                }
-                if input.is_key_down(Key::D) {
-                    s.move_by(Vec3::new(SPEED, 0.0, 0.0));
-                    if self.things[0].get_dir() != Direction::East {
-                        self.things[0].trf.rotation =
-                            Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
+                    if input.is_key_down(Key::S) {
+                        s.move_by(Vec3::new(0.0, 0.0, SPEED));
+                        if self.things[0].get_dir() != Direction::South {
+                            self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
+                        }
+                        self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
                     }
-                    self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
+                    if input.is_key_down(Key::A) {
+                        s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                        if self.things[0].get_dir() != Direction::West {
+                            self.things[0].trf.rotation =
+                                Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
+                        }
+                        self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                    }
+                    if input.is_key_down(Key::D) {
+                        s.move_by(Vec3::new(SPEED, 0.0, 0.0));
+                        if self.things[0].get_dir() != Direction::East {
+                            self.things[0].trf.rotation =
+                                Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
+                        }
+                        self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
+                    }
                 }
 
                 for dooridx in self.state.rooms[self.state.current_room].doors.iter() {
@@ -312,6 +331,7 @@ impl frenderer::World for World {
                         s.trf.translation = get_spawn_pos(door.direction);
                         s.tex_model.trf.translation = get_spawn_pos(door.direction);
                         self.things[0].trf.translation = get_spawn_pos(door.direction);
+                        dbg!(self.state.current_room);
                     }
                 }
 
@@ -556,16 +576,23 @@ fn main() -> Result<()> {
     let char_model = engine.assets().create_textured_model(model, vec![tex]);
 
     //door model
+    let door_tex = engine
+        .assets()
+        .load_texture(std::path::Path::new("content/floor.png"))?;
     let door = engine
         .assets()
         .load_textured(std::path::Path::new("content/door.fbx"))?;
-    let door_model = engine.assets().create_textured_model(door, vec![tex]);
+    let door_model = engine.assets().create_textured_model(door, vec![door_tex]);
+
 
     // room model
+    let room_tex = engine
+    .assets()
+    .load_texture(std::path::Path::new("content/tex2.png"))?;
     let room = engine
         .assets()
-        .load_textured(std::path::Path::new("content/room2.fbx"))?;
-    let room_model = engine.assets().create_textured_model(room, vec![tex]);
+        .load_textured(std::path::Path::new("content/room.fbx"))?;
+    let room_model = engine.assets().create_textured_model(room, vec![room_tex]);
 
     let key_tex = engine
         .assets()
@@ -817,7 +844,8 @@ fn restart(curr_number_rooms: usize) -> GameState {
     let (room_list, door_list) =
         generate_room_map((curr_number_rooms + DIFFICULTY) as u32, DIFFICULTY);
     let mut rng = rand::thread_rng();
-    let keyidx = rng.gen_range(0..curr_number_rooms + DIFFICULTY);
+    let keyidx = rng.gen_range(1..curr_number_rooms + DIFFICULTY);      
+    dbg!({"key loca: "}, keyidx);     
     return GameState {
         current_room: 0, //index of room in rooms
         max_rooms: curr_number_rooms + DIFFICULTY,
@@ -928,8 +956,11 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
             rooms.push(room2);
         }
         n += 1;
+        dbg!({"while 1"});
+
     }
 
+    //generate dead ends
     while curr_dead_ends < num_dead_ends {
         let roomidx = rng.gen_range(0..rooms.len() - 1);
         let srcroom = &mut rooms[roomidx]; //get room index
@@ -944,6 +975,7 @@ fn generate_room_map(num_rooms: u32, num_dead_ends: usize) -> (Vec<Room>, Vec<Do
         rooms.push(dest_room);
 
         curr_dead_ends += 1;
+        dbg!({"while 2"});
     }
     dbg!(&doors);
     dbg!(&rooms);
@@ -959,7 +991,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
     //else we need to make sure there are no repeats
     let mut check = true; //unique direction
     let mut check2 = true; //unique target
-    for n in 0..room.doors.len() - 1 {
+    for n in 0..room.doors.len() {
         if door.direction == doors[room.doors[n]].direction {
             check = false;
         }
@@ -969,7 +1001,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
     }
     while check == false || check2 == false {
         door = generate_door(target);
-        for n in 0..room.doors.len() - 1 {
+        for n in 0..room.doors.len() {
             if door.direction == doors[room.doors[n]].direction {
                 check = false;
             } else {
@@ -981,6 +1013,7 @@ fn gen_valid_door(room: &Room, target: usize, doors: &[Door]) -> Door {
                 check2 = true;
             }
         }
+        dbg!({"while 3"});
     }
     return door;
 }
