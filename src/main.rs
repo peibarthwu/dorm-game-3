@@ -228,45 +228,87 @@ impl frenderer::World for World {
             self.things[0].tick_animation();
 
             for s in self.sprites.iter_mut() {
-                //to think about: collisions with chest in first room
+                if input.is_key_down(Key::W) {
+                    s.move_by(Vec3::new(0.0, 0.0, -SPEED));
+                    if self.things[0].get_dir() != Direction::North {
+                        self.things[0].trf.rotation =
+                            Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
+                    }
+                    self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
+                }
+                if input.is_key_down(Key::S) {
+                    s.move_by(Vec3::new(0.0, 0.0, SPEED));
+                    if self.things[0].get_dir() != Direction::South {
+                        self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
+                    }
+                    self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
+                }
+                if input.is_key_down(Key::A) {
+                    s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                    if self.things[0].get_dir() != Direction::West {
+                        self.things[0].trf.rotation =
+                            Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
+                    }
+                    self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                }
+                if input.is_key_down(Key::D) {
+                    s.move_by(Vec3::new(SPEED, 0.0, 0.0));
+                    if self.things[0].get_dir() != Direction::East {
+                        self.things[0].trf.rotation =
+                            Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
+                    }
+                    self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
+                }
 
-                //if we are in the first room
-                if self.state.current_room == 0 {
-                }
-                //if we are in any other room
-                else {
-                    if input.is_key_down(Key::W) {
-                        s.move_by(Vec3::new(0.0, 0.0, -SPEED));
-                        if self.things[0].get_dir() != Direction::North {
-                            self.things[0].trf.rotation =
-                                Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
-                        }
-                        self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
-                    }
-                    if input.is_key_down(Key::S) {
-                        s.move_by(Vec3::new(0.0, 0.0, SPEED));
-                        if self.things[0].get_dir() != Direction::South {
-                            self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
-                        }
-                        self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
-                    }
-                    if input.is_key_down(Key::A) {
-                        s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                        if self.things[0].get_dir() != Direction::West {
-                            self.things[0].trf.rotation =
-                                Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
-                        }
-                        self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
-                    }
-                    if input.is_key_down(Key::D) {
-                        s.move_by(Vec3::new(SPEED, 0.0, 0.0));
-                        if self.things[0].get_dir() != Direction::East {
-                            self.things[0].trf.rotation =
-                                Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
-                        }
-                        self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
-                    }
-                }
+                //     if input.is_key_down(Key::W)
+                //     {
+                //         //if there are collisions in the first room
+                //         if !(self.state.current_room == 0 && s.check_item_collisions(
+                //             self.things[0].get_dir(),
+                //             7.75,
+                //             7.75,
+                //             &self.textured[0]))
+                //         {
+                //                 s.move_by(Vec3::new(0.0, 0.0, -SPEED));
+                //                 if self.things[0].get_dir() != Direction::North
+                //                 {
+                //                     self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, PI as f32);
+                //                 }
+                //                 self.things[0].move_by(Vec3::new(0.0, 0.0, -SPEED));
+                //         }
+
+                //     }
+                //     if input.is_key_down(Key::S) {
+                //         if !(self.state.current_room == 0 && s.check_item_collisions(
+                //             self.things[0].get_dir(),
+                //             7.75,
+                //             7.75,
+                //             &self.textured[0]))
+                //         {
+                //             s.move_by(Vec3::new(0.0, 0.0, SPEED));
+                //             if self.things[0].get_dir() != Direction::South {
+                //                 self.things[0].trf.rotation = Rotor3::from_euler_angles(0.0, 0.0, 0.0);
+                //             }
+                //             self.things[0].move_by(Vec3::new(0.0, 0.0, SPEED));
+                //         }
+                //     }
+                //     if input.is_key_down(Key::A) {
+                //         s.move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                //         if self.things[0].get_dir() != Direction::West {
+                //             self.things[0].trf.rotation =
+                //                 Rotor3::from_euler_angles(0.0, 0.0, PI / 2.0 as f32);
+                //         }
+                //         self.things[0].move_by(Vec3::new(-SPEED, 0.0, 0.0));
+                //     }
+                //     if input.is_key_down(Key::D) {
+                //         s.move_by(Vec3::new(SPEED, 0.0, 0.0));
+                //         if self.things[0].get_dir() != Direction::East {
+                //             self.things[0].trf.rotation =
+                //                 Rotor3::from_euler_angles(0.0, 0.0, -PI / 2.0 as f32);
+                //         }
+                //         self.things[0].move_by(Vec3::new(SPEED, 0.0, 0.0));
+                //     }
+                // }
 
                 for dooridx in self.state.rooms[self.state.current_room].doors.iter() {
                     let door = self.state.doors[*dooridx as usize];
