@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use frenderer::animation::{AnimationSettings, AnimationState};
 use frenderer::assets::AnimRef;
-use frenderer::assets::TextureRef;
+//use frenderer::assets::TextureRef;
 use frenderer::camera::{self, Camera};
 use frenderer::renderer::skinned::SingleRenderState as FSkinned;
 use frenderer::renderer::textured::SingleRenderState as FTextured;
@@ -630,10 +630,10 @@ fn main() -> Result<()> {
 
     let chest_tex = engine
         .assets()
-        .load_texture(std::path::Path::new("content/minecraft chets tex.png"))?;
+        .load_texture(std::path::Path::new("content/minecraft chest tex.png"))?;
     let chest_mesh = engine
         .assets()
-        .load_textured(std::path::Path::new("content/minecraft chest.fbx"))?;
+        .load_textured(std::path::Path::new("content/minecraft chest y up.fbx"))?;
     let chest_model = engine
         .assets()
         .create_textured_model(chest_mesh, vec![chest_tex]);
@@ -804,7 +804,11 @@ fn main() -> Result<()> {
                 name: String::from("key model"),
             },
             Textured {
-                trf: Similarity3::new(Vec3::new(0.0, 5.0, 0.0), Rotor3::identity(), 5.0),
+                trf: Similarity3::new(
+                    Vec3::new(0.0, 5.0, 0.0),
+                    Rotor3::from_euler_angles(0.0, -PI / 2.0, 0.0),
+                    5.0,
+                ),
                 model: chest_model.clone(),
                 name: String::from("chest model"),
             },
